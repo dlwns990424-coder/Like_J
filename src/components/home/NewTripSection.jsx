@@ -9,7 +9,7 @@ export default function NewTripSection() {
 
       <Link
         to="/trip-create"
-        className="mt-[16px] w-fit rounded-full bg-[#3478F6] px-[10px] py-[6px] text-[16px] font-semibold leading-[24px] text-white"
+        className="click-scale mt-[16px] inline-flex w-fit items-center justify-center rounded-full bg-[#3478F6] px-[10px] py-[6px] text-[14px] font-semibold leading-[24px] text-white"
       >
         새 여행 계획 만들기
       </Link>

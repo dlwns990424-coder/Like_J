@@ -8,8 +8,6 @@ export default function Calendar({
   endDate,
   setEndDate,
 }) {
-  const today = new Date();
-
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
 
@@ -41,14 +39,6 @@ export default function Calendar({
     );
   };
 
-  const isPastDate = (date) => {
-    const normalizedToday = normalizeDate(today);
-
-    const normalizedDate = normalizeDate(date);
-
-    return normalizedDate < normalizedToday;
-  };
-
   const isInRange = (date) => {
     if (!startDate || !endDate) {
       return false;
@@ -62,37 +52,40 @@ export default function Calendar({
   };
 
   const handleDateSelect = (date) => {
-    if (isPastDate(date)) return;
+    /*
+      아무것도 선택하지 않은 상태
+      또는 시작일 + 종료일이 모두 선택된 상태
 
+      → 새 시작일 선택
+    */
     if (!startDate || (startDate && endDate)) {
       setStartDate(date);
       setEndDate(null);
       return;
     }
 
+    /*
+      두 번째로 선택한 날짜가
+      기존 시작일보다 이전이면
+
+      → 해당 날짜를 새로운 시작일로 변경
+    */
     if (date < startDate) {
       setStartDate(date);
       setEndDate(null);
       return;
     }
 
+    /*
+      시작일 이후 날짜 선택
+
+      → 종료일 설정
+    */
     setEndDate(date);
   };
 
   const handlePrevMonth = () => {
-    const previousMonth = new Date(year, month - 1, 1);
-
-    const currentMonthStart = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      1,
-    );
-
-    if (previousMonth < currentMonthStart) {
-      return;
-    }
-
-    setCurrentMonth(previousMonth);
+    setCurrentMonth(new Date(year, month - 1, 1));
   };
 
   const handleNextMonth = () => {
@@ -113,11 +106,15 @@ export default function Calendar({
 
   return (
     <div>
+      {/* =========================
+          Month Navigation
+      ========================= */}
+
       <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={handlePrevMonth}
-          className="flex h-[40px] w-[40px] items-center justify-center"
+          className="click-scale-sm flex h-[40px] w-[40px] items-center justify-center"
         >
           <ChevronLeft size={22} strokeWidth={1.5} />
         </button>
@@ -129,11 +126,15 @@ export default function Calendar({
         <button
           type="button"
           onClick={handleNextMonth}
-          className="flex h-[40px] w-[40px] items-center justify-center"
+          className="click-scale-sm flex h-[40px] w-[40px] items-center justify-center"
         >
           <ChevronRight size={22} strokeWidth={1.5} />
         </button>
       </div>
+
+      {/* =========================
+          Week
+      ========================= */}
 
       <div className="mt-[16px] grid grid-cols-7 text-center text-[12px] leading-[18px] text-[#888888]">
         <span>일</span>
@@ -144,6 +145,10 @@ export default function Calendar({
         <span>금</span>
         <span>토</span>
       </div>
+
+      {/* =========================
+          Calendar Days
+      ========================= */}
 
       <div className="mt-[8px] grid grid-cols-7 gap-y-[6px]">
         {calendarDays.map((date, index) => {
@@ -157,15 +162,13 @@ export default function Calendar({
 
           const inRange = isInRange(date);
 
-          const disabled = isPastDate(date);
-
           return (
             <button
               key={date.toISOString()}
               type="button"
-              disabled={disabled}
               onClick={() => handleDateSelect(date)}
               className={`
+                click-scale
                 relative
                 flex
                 h-[44px]
@@ -173,8 +176,7 @@ export default function Calendar({
                 justify-center
                 text-[14px]
                 leading-[20px]
-
-                ${disabled ? "cursor-default text-[#D9D9D9]" : "text-[#191919]"}
+                text-[#191919]
 
                 ${inRange ? "bg-[#EAF2FF]" : ""}
 
@@ -203,6 +205,10 @@ export default function Calendar({
           );
         })}
       </div>
+
+      {/* =========================
+          Selected Date
+      ========================= */}
 
       <div className="mt-[20px] flex items-center justify-center gap-[30px]">
         <div className="text-center">

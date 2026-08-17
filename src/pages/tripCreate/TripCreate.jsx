@@ -1,21 +1,46 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { MapPin } from "lucide-react";
 
 import Header from "../../components/common/Header";
 import SearchInput from "../../components/common/SearchInput";
 import Calendar from "../../components/trip/common/Calendar";
+import SelectCard from "../../components/trip/create/SelectCard";
 
 import { getCurrentUser, saveTrip } from "../../lib/storage";
 
 export default function TripCreate() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const places = useMapsLibrary("places");
 
   const currentUser = getCurrentUser();
 
-  const [step, setStep] = useState(1);
+  // ====================
+  // Map에서 넘어온 여행지
+  // ====================
+
+  const destinationFromMap = location.state?.destination || null;
+
+  const sourcePlace = location.state?.sourcePlace || null;
+
+  // ====================
+  // Step
+  //
+  // 1 = 여행지
+  // 2 = 날짜
+  // ====================
+
+  const [step, setStep] = useState(destinationFromMap ? 2 : 1);
+
+  // ====================
+  // Search Mode
+  //
+  // destination = 국가
+  // city = 도시
+  // ====================
 
   const [searchMode, setSearchMode] = useState("destination");
 
@@ -25,9 +50,46 @@ export default function TripCreate() {
 
   const [sessionToken, setSessionToken] = useState(null);
 
-  const [selectedCountry, setSelectedCountry] = useState(null);
+  // ====================
+  // 국가
+  // ====================
 
-  const [selectedCity, setSelectedCity] = useState(null);
+  const [selectedCountry, setSelectedCountry] = useState(
+    destinationFromMap
+      ? {
+          placeId: destinationFromMap.placeId,
+          country: destinationFromMap.country,
+          countryCode: destinationFromMap.countryCode,
+          address: destinationFromMap.address,
+          lat: destinationFromMap.lat,
+          lng: destinationFromMap.lng,
+          imageUrl: null,
+        }
+      : null,
+  );
+
+  // ====================
+  // 도시
+  // ====================
+
+  const [selectedCity, setSelectedCity] = useState(
+    destinationFromMap
+      ? {
+          placeId: destinationFromMap.placeId,
+          city: destinationFromMap.city,
+          country: destinationFromMap.country,
+          countryCode: destinationFromMap.countryCode,
+          address: destinationFromMap.address,
+          lat: destinationFromMap.lat,
+          lng: destinationFromMap.lng,
+          imageUrl: null,
+        }
+      : null,
+  );
+
+  // ====================
+  // 날짜
+  // ====================
 
   const today = new Date();
 
@@ -40,7 +102,30 @@ export default function TripCreate() {
   const [endDate, setEndDate] = useState(null);
 
   // ====================
-  // 여행지 검색
+  // Google Place Photo
+  // ====================
+
+  const getPlacePhoto = (place) => {
+    const photo = place.photos?.[0];
+
+    if (!photo) {
+      return null;
+    }
+
+    try {
+      return photo.getURI({
+        maxWidth: 900,
+        maxHeight: 700,
+      });
+    } catch (error) {
+      console.error("장소 이미지 오류:", error);
+
+      return null;
+    }
+  };
+
+  // ====================
+  // 검색
   // ====================
 
   const handleSearch = async (e) => {
@@ -69,12 +154,15 @@ export default function TripCreate() {
         language: "ko",
       };
 
+      // 도시 검색
       if (searchMode === "city" && selectedCountry) {
         request.includedPrimaryTypes = ["(cities)"];
 
-        request.includedRegionCodes = [
-          selectedCountry.countryCode.toLowerCase(),
-        ];
+        if (selectedCountry.countryCode) {
+          request.includedRegionCodes = [
+            selectedCountry.countryCode.toLowerCase(),
+          ];
+        }
       }
 
       const { suggestions } =
@@ -86,6 +174,7 @@ export default function TripCreate() {
         .map((suggestion) => suggestion.placePrediction)
         .filter(Boolean);
 
+      // 국가 검색
       if (searchMode === "destination") {
         const destinationResults = predictions.filter((prediction) =>
           prediction.types?.some((type) =>
@@ -103,6 +192,7 @@ export default function TripCreate() {
         return;
       }
 
+      // 도시 검색
       setSearchResults(predictions);
     } catch (error) {
       console.error("여행지 검색 오류:", error);
@@ -111,13 +201,29 @@ export default function TripCreate() {
     }
   };
 
+  // ====================
+  // 검색어 변경
+  // ====================
+
   const handleKeywordChange = (e) => {
     setKeyword(e.target.value);
+
     setSearchResults([]);
+
+    // 국가를 다시 검색하면 기존 선택 해제
+    if (searchMode === "destination") {
+      setSelectedCountry(null);
+      setSelectedCity(null);
+    }
+
+    // 도시를 다시 검색하면 도시만 해제
+    if (searchMode === "city") {
+      setSelectedCity(null);
+    }
   };
 
   // ====================
-  // 여행지 선택
+  // 장소 선택
   // ====================
 
   const handlePlaceSelect = async (prediction) => {
@@ -132,39 +238,13 @@ export default function TripCreate() {
           "formattedAddress",
           "location",
           "addressComponents",
+          "photos",
         ],
       });
 
       const countryComponent = place.addressComponents?.find((component) =>
         component.types.includes("country"),
       );
-
-      const isCountry = prediction.types?.includes("country");
-
-      if (searchMode === "destination" && isCountry) {
-        const country = {
-          placeId: place.id,
-
-          country: countryComponent?.longText || place.displayName || "",
-
-          countryCode: countryComponent?.shortText || "",
-
-          address: place.formattedAddress || "",
-
-          lat: place.location?.lat() ?? null,
-
-          lng: place.location?.lng() ?? null,
-        };
-
-        setSelectedCountry(country);
-
-        setSearchMode("city");
-
-        setKeyword("");
-        setSearchResults([]);
-
-        return;
-      }
 
       const localityComponent = place.addressComponents?.find((component) =>
         component.types.includes("locality"),
@@ -176,6 +256,50 @@ export default function TripCreate() {
           component.types.includes("administrative_area_level_2"),
       );
 
+      const imageUrl = getPlacePhoto(place);
+
+      // ====================
+      // 국가 선택
+      // ====================
+
+      if (searchMode === "destination") {
+        const country = {
+          placeId: place.id,
+
+          country:
+            countryComponent?.longText ||
+            place.displayName ||
+            prediction.mainText?.toString() ||
+            "",
+
+          countryCode: countryComponent?.shortText || "",
+
+          address: place.formattedAddress || "",
+
+          lat: place.location?.lat() ?? null,
+
+          lng: place.location?.lng() ?? null,
+
+          imageUrl,
+        };
+
+        setSelectedCountry(country);
+
+        setSelectedCity(null);
+
+        setKeyword("");
+
+        setSearchResults([]);
+
+        setSessionToken(null);
+
+        return;
+      }
+
+      // ====================
+      // 도시 선택
+      // ====================
+
       const city = {
         placeId: place.id,
 
@@ -183,6 +307,7 @@ export default function TripCreate() {
           localityComponent?.longText ||
           adminAreaComponent?.longText ||
           place.displayName ||
+          prediction.mainText?.toString() ||
           "",
 
         country: countryComponent?.longText || selectedCountry?.country || "",
@@ -195,23 +320,118 @@ export default function TripCreate() {
         lat: place.location?.lat() ?? null,
 
         lng: place.location?.lng() ?? null,
+
+        imageUrl,
       };
 
       setSelectedCity(city);
 
+      setKeyword("");
+
+      setSearchResults([]);
+
       setSessionToken(null);
-
-      setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
-
-      setStartDate(null);
-      setEndDate(null);
-
-      setStep(2);
     } catch (error) {
       console.error("여행지 상세정보 오류:", error);
 
       alert("여행지 정보를 불러오지 못했습니다.");
     }
+  };
+
+  // ====================
+  // 국가 선택 취소
+  // ====================
+
+  const handleRemoveCountry = () => {
+    setSelectedCountry(null);
+
+    setSelectedCity(null);
+
+    setKeyword("");
+
+    setSearchResults([]);
+
+    setSessionToken(null);
+  };
+
+  // ====================
+  // 도시 선택 취소
+  // ====================
+
+  const handleRemoveCity = () => {
+    setSelectedCity(null);
+
+    setKeyword("");
+
+    setSearchResults([]);
+
+    setSessionToken(null);
+  };
+
+  // ====================
+  // 국가 계속
+  // ====================
+
+  const handleCountryContinue = () => {
+    if (!selectedCountry) return;
+
+    setSearchMode("city");
+
+    setKeyword("");
+
+    setSearchResults([]);
+
+    setSelectedCity(null);
+
+    setSessionToken(null);
+  };
+
+  // ====================
+  // 도시 계속
+  // ====================
+
+  const handleCityContinue = () => {
+    if (!selectedCity) return;
+
+    setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+
+    setStartDate(null);
+    setEndDate(null);
+
+    setStep(2);
+  };
+
+  // ====================
+  // 도시 건너뛰기
+  // ====================
+
+  const handleSkipCity = () => {
+    if (!selectedCountry) return;
+
+    setSelectedCity({
+      placeId: selectedCountry.placeId,
+
+      city: "",
+
+      country: selectedCountry.country,
+
+      countryCode: selectedCountry.countryCode,
+
+      address: selectedCountry.address,
+
+      lat: selectedCountry.lat,
+
+      lng: selectedCountry.lng,
+
+      imageUrl: selectedCountry.imageUrl,
+    });
+
+    setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+
+    setStartDate(null);
+    setEndDate(null);
+
+    setStep(2);
   };
 
   // ====================
@@ -237,7 +457,7 @@ export default function TripCreate() {
   };
 
   // ====================
-  // 날짜
+  // 날짜 포맷
   // ====================
 
   const formatDate = (date) => {
@@ -253,31 +473,37 @@ export default function TripCreate() {
   };
 
   // ====================
-  // Navigation
+  // 뒤로가기
   // ====================
 
   const handleBack = () => {
+    // Map에서 여행 계획 만들기로 들어온 경우
+    if (destinationFromMap && step === 2) {
+      navigate(-1);
+      return;
+    }
+
+    // 날짜 → 도시
     if (step === 2) {
       setStep(1);
 
-      if (selectedCountry) {
-        setSearchMode("city");
-      } else {
-        setSearchMode("destination");
-      }
+      setSearchMode("city");
 
       setKeyword("");
+
       setSearchResults([]);
 
       return;
     }
 
+    // 도시 → 국가
     if (searchMode === "city") {
-      setSelectedCountry(null);
-
       setSearchMode("destination");
 
+      setSelectedCity(null);
+
       setKeyword("");
+
       setSearchResults([]);
 
       return;
@@ -285,6 +511,10 @@ export default function TripCreate() {
 
     navigate(-1);
   };
+
+  // ====================
+  // 닫기
+  // ====================
 
   const handleClose = () => {
     navigate("/home");
@@ -310,12 +540,14 @@ export default function TripCreate() {
       return;
     }
 
+    const destinationName = selectedCity.city || selectedCity.country;
+
     const trip = {
       id: crypto.randomUUID(),
 
       userId: currentUser.id,
 
-      title: `${selectedCity.city} 여행`,
+      title: `${destinationName} 여행`,
 
       country: selectedCity.country,
 
@@ -332,6 +564,8 @@ export default function TripCreate() {
       imageUrl: "",
 
       memo: "",
+
+      sourcePlaceId: sourcePlace?.id || null,
     };
 
     saveTrip(trip);
@@ -345,8 +579,23 @@ export default function TripCreate() {
         <Header showBack showClose onBack={handleBack} onClose={handleClose} />
 
         <div className="min-h-dvh pt-[calc(60px+env(safe-area-inset-top))]">
+          {/* ====================
+              STEP 1
+          ==================== */}
+
           {step === 1 && (
-            <section className="px-5 pt-[36px] pb-[calc(20px+env(safe-area-inset-bottom))]">
+            <section
+              className="
+                flex
+                min-h-[calc(100dvh-60px-env(safe-area-inset-top))]
+                flex-col
+                px-5
+                pt-[36px]
+                pb-[calc(20px+env(safe-area-inset-bottom))]
+              "
+            >
+              {/* 제목 */}
+
               {searchMode === "destination" ? (
                 <>
                   <h1 className="text-[28px] font-bold leading-[36px] tracking-[-0.02em]">
@@ -369,18 +618,27 @@ export default function TripCreate() {
                 </>
               )}
 
-              <div className="mt-[28px]">
-                <SearchInput
-                  value={keyword}
-                  onChange={handleKeywordChange}
-                  onSubmit={handleSearch}
-                  placeholder={
-                    searchMode === "destination"
-                      ? "국가 또는 지역을 검색하세요"
-                      : "도시를 검색하세요"
-                  }
-                />
-              </div>
+              {/* 검색 */}
+
+              {!(
+                (searchMode === "destination" && selectedCountry) ||
+                (searchMode === "city" && selectedCity)
+              ) && (
+                <div className="mt-[28px]">
+                  <SearchInput
+                    value={keyword}
+                    onChange={handleKeywordChange}
+                    onSubmit={handleSearch}
+                    placeholder={
+                      searchMode === "destination"
+                        ? "국가 또는 지역을 검색하세요"
+                        : "도시를 검색하세요"
+                    }
+                  />
+                </div>
+              )}
+
+              {/* 검색 결과 */}
 
               {searchResults.length > 0 && (
                 <div className="mt-[20px]">
@@ -389,7 +647,17 @@ export default function TripCreate() {
                       key={prediction.placeId}
                       type="button"
                       onClick={() => handlePlaceSelect(prediction)}
-                      className="flex w-full items-center gap-[16px] border-b border-[#D9D9D9] py-[14px] text-left"
+                      className="
+                        click-scale
+                        flex
+                        w-full
+                        items-center
+                        gap-[16px]
+                        border-b
+                        border-[#D9D9D9]
+                        py-[14px]
+                        text-left
+                      "
                     >
                       <MapPin
                         size={22}
@@ -397,14 +665,14 @@ export default function TripCreate() {
                         className="shrink-0"
                       />
 
-                      <div>
-                        <p className="text-[16px] leading-[24px]">
+                      <div className="min-w-0">
+                        <p className="truncate text-[16px] leading-[24px]">
                           {prediction.mainText?.toString() ||
                             prediction.text?.toString()}
                         </p>
 
                         {prediction.secondaryText && (
-                          <p className="mt-[2px] text-[12px] leading-[18px] text-[#888888]">
+                          <p className="mt-[2px] truncate text-[12px] leading-[18px] text-[#888888]">
                             {prediction.secondaryText.toString()}
                           </p>
                         )}
@@ -413,23 +681,194 @@ export default function TripCreate() {
                   ))}
                 </div>
               )}
+
+              {/* ====================
+                  국가 선택 카드
+              ==================== */}
+
+              {searchMode === "destination" && selectedCountry && (
+                <div className="mt-[28px]">
+                  <SelectCard
+                    name={selectedCountry.country}
+                    imageUrl={selectedCountry.imageUrl}
+                    onRemove={handleRemoveCountry}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleRemoveCountry}
+                    className="
+                      click-scale
+                      mx-auto
+                      mt-[20px]
+                      flex
+                      items-center
+                      justify-center
+                      text-[14px]
+                      font-semibold
+                      leading-[24px]
+                      text-[#888888]
+                    "
+                  >
+                    + 다른 곳 선택하기
+                  </button>
+                </div>
+              )}
+
+              {/* ====================
+                  도시 선택 카드
+              ==================== */}
+
+              {searchMode === "city" && selectedCity && (
+                <div className="mt-[28px]">
+                  <SelectCard
+                    name={selectedCity.city}
+                    subName={selectedCity.country}
+                    imageUrl={selectedCity.imageUrl}
+                    onRemove={handleRemoveCity}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleRemoveCity}
+                    className="
+                      click-scale
+                      mx-auto
+                      mt-[20px]
+                      flex
+                      items-center
+                      justify-center
+                      text-[14px]
+                      font-semibold
+                      leading-[24px]
+                      text-[#888888]
+                    "
+                  >
+                    + 다른 곳 선택하기
+                  </button>
+                </div>
+              )}
+
+              {/* ====================
+                  하단 버튼
+              ==================== */}
+
+              <div className="mt-auto pt-[32px]">
+                {/* 국가 */}
+
+                {searchMode === "destination" && (
+                  <button
+                    type="button"
+                    disabled={!selectedCountry}
+                    onClick={handleCountryContinue}
+                    className={`
+                      flex
+                      h-[52px]
+                      w-full
+                      items-center
+                      justify-center
+                      rounded-xl
+                      text-[16px]
+                      font-semibold
+                      leading-[24px]
+                      text-white
+
+                      ${
+                        selectedCountry
+                          ? "click-scale bg-[#3478F6]"
+                          : "cursor-default bg-[#AFCBFF]"
+                      }
+                    `}
+                  >
+                    계속하세요
+                  </button>
+                )}
+
+                {/* 도시 */}
+
+                {searchMode === "city" && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={!selectedCity}
+                      onClick={handleCityContinue}
+                      className={`
+                        flex
+                        h-[52px]
+                        w-full
+                        items-center
+                        justify-center
+                        rounded-xl
+                        text-[16px]
+                        font-semibold
+                        leading-[24px]
+                        text-white
+
+                        ${
+                          selectedCity
+                            ? "click-scale bg-[#3478F6]"
+                            : "cursor-default bg-[#AFCBFF]"
+                        }
+                      `}
+                    >
+                      계속하세요
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSkipCity}
+                      className="
+                        click-scale
+                        mt-[12px]
+                        flex
+                        h-[40px]
+                        w-full
+                        items-center
+                        justify-center
+                        text-[14px]
+                        font-semibold
+                        leading-[20px]
+                        text-[#555555]
+                      "
+                    >
+                      건너뛰기
+                    </button>
+                  </>
+                )}
+              </div>
             </section>
           )}
 
+          {/* ====================
+              STEP 2
+              날짜
+          ==================== */}
+
           {step === 2 && (
-            <section className="flex min-h-[calc(100dvh-60px-env(safe-area-inset-top))] flex-col px-5 pt-[36px] pb-[calc(20px+env(safe-area-inset-bottom))]">
+            <section
+              className="
+                flex
+                min-h-[calc(100dvh-60px-env(safe-area-inset-top))]
+                flex-col
+                px-5
+                pt-[36px]
+                pb-[calc(20px+env(safe-area-inset-bottom))]
+              "
+            >
               <h1 className="text-[28px] font-bold leading-[36px] tracking-[-0.02em]">
                 여행 기간을 선택해주세요.
               </h1>
 
-              <div className="mt-[24px] rounded-xl bg-[#F5F5F5] p-[10px]">
+              <div className="mt-[24px] rounded-xl border border-[#D9D9D9] bg-white p-[10px]">
                 <p className="text-[16px] font-semibold leading-[24px]">
-                  {selectedCity?.city}
+                  {selectedCity?.city || selectedCity?.country}
                 </p>
 
-                <p className="mt-[2px] text-[12px] leading-[18px] text-[#888888]">
-                  {selectedCity?.country}
-                </p>
+                {selectedCity?.city && (
+                  <p className="mt-[2px] text-[12px] leading-[18px] text-[#888888]">
+                    {selectedCity.country}
+                  </p>
+                )}
               </div>
 
               <div className="mt-[28px]">
@@ -446,7 +885,22 @@ export default function TripCreate() {
               <button
                 type="button"
                 onClick={handleCreateTrip}
-                className="mt-auto flex h-[52px] w-full shrink-0 items-center justify-center rounded-xl bg-[#3478F6] text-[16px] font-semibold leading-[24px] text-white"
+                className="
+                  click-scale
+                  mt-auto
+                  flex
+                  h-[52px]
+                  w-full
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-[#3478F6]
+                  text-[16px]
+                  font-semibold
+                  leading-[24px]
+                  text-white
+                "
               >
                 여행 만들기
               </button>

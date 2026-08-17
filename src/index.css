@@ -32,3 +32,28 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* =========================
+   Click Scale
+========================= */
+
+.click-scale {
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.click-scale:active {
+  transform: scale(0.96);
+}
+
+/* 아이콘처럼 작은 버튼 */
+.click-scale-sm {
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.click-scale-sm:active {
+  transform: scale(0.92);
+}

@@ -25,7 +25,7 @@ export default function Landing() {
         <div className="mt-auto">
           <Link
             to="/signup"
-            className="flex h-[52px] w-full items-center justify-center rounded-xl bg-[#3478F6] text-[16px] font-semibold leading-[24px] text-white"
+            className="click-scale flex h-[52px] w-full items-center justify-center rounded-xl bg-[#3478F6] text-[16px] font-semibold leading-[24px] text-white"
           >
             회원가입
           </Link>
@@ -33,7 +33,7 @@ export default function Landing() {
           <div className="mt-[16px] flex items-center justify-center gap-[10px] text-[14px] leading-[20px]">
             <span className="text-[#555555]">이미 계정이 있으신가요?</span>
 
-            <Link to="/login" className="text-[#3478F6]">
+            <Link to="/login" className="click-scale text-[#3478F6]">
               로그인
             </Link>
           </div>

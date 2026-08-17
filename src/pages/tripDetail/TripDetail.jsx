@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import BottomNav from "../../components/common/BottomNav";
 
@@ -23,19 +23,12 @@ const TAB_INDEX = {
   expense: 2,
 };
 
-/*
-  모든 탭 전환 애니메이션 시간
-
-  Hero + Card
-  Tabs
-  Horizontal Page
-
-  전부 300ms로 통일
-*/
 const SLIDE_TIME = 300;
 
 export default function TripDetail() {
   const navigate = useNavigate();
+
+  const location = useLocation();
 
   const { id } = useParams();
 
@@ -44,10 +37,23 @@ export default function TripDetail() {
   const trip = getTripById(id);
 
   // ====================
+  // Initial Tab
+  // ====================
+
+  const initialTab =
+    location.state?.tab === "schedule"
+      ? "schedule"
+      : location.state?.tab === "expense"
+        ? "expense"
+        : "prepare";
+
+  const returnScheduleDate = location.state?.date || null;
+
+  // ====================
   // State
   // ====================
 
-  const [activeTab, setActiveTab] = useState("prepare");
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   const [isPrepareHeaderSolid, setIsPrepareHeaderSolid] = useState(false);
 
@@ -56,6 +62,8 @@ export default function TripDetail() {
   const [heroOffset, setHeroOffset] = useState(0);
 
   const [animateTopArea, setAnimateTopArea] = useState(false);
+
+  const [isHeroVisible, setIsHeroVisible] = useState(initialTab === "prepare");
 
   // ====================
   // Refs
@@ -82,7 +90,7 @@ export default function TripDetail() {
   const activeIndex = TAB_INDEX[activeTab];
 
   // ====================
-  // TripDetail Body Scroll Lock
+  // Body Scroll Lock
   // ====================
 
   useEffect(() => {
@@ -146,31 +154,41 @@ export default function TripDetail() {
   };
 
   // ====================
-  // Header 변경 기준점
+  // 초기 위치 설정
   // ====================
 
   useLayoutEffect(() => {
     const title = titleRef.current;
 
-    if (!title) {
-      return;
+    if (title) {
+      const titleRect = title.getBoundingClientRect();
+
+      const titleCenter = titleRect.top + titleRect.height / 2;
+
+      const headerCenter = getSafeAreaTop() + HEADER_HEIGHT / 2;
+
+      headerSwitchPointRef.current = Math.max(0, titleCenter - headerCenter);
     }
-
-    const titleRect = title.getBoundingClientRect();
-
-    const titleCenter = titleRect.top + titleRect.height / 2;
-
-    const headerCenter = getSafeAreaTop() + HEADER_HEIGHT / 2;
-
-    headerSwitchPointRef.current = Math.max(0, titleCenter - headerCenter);
 
     const prepareScroll = prepareScrollRef.current?.scrollTop || 0;
 
     setIsPrepareHeaderSolid(prepareScroll >= headerSwitchPointRef.current);
 
-    setHeroOffset(getPrepareHeroOffset());
+    if (initialTab === "prepare") {
+      setHeroOffset(getPrepareHeroOffset());
 
-    setTabsTop(getPrepareTabsTop());
+      setTabsTop(getPrepareTabsTop());
+
+      setIsHeroVisible(true);
+
+      return;
+    }
+
+    setHeroOffset(getHeroCollapsedOffset());
+
+    setTabsTop(getHeaderBottom());
+
+    setIsHeroVisible(false);
   }, [trip?.id]);
 
   // ====================
@@ -186,19 +204,7 @@ export default function TripDetail() {
 
     const scrollTop = container.scrollTop;
 
-    // ====================
-    // Header
-    // ====================
-
     setIsPrepareHeaderSolid(scrollTop >= headerSwitchPointRef.current);
-
-    // ====================
-    // Hero + Tabs
-    //
-    // 직접 스크롤할 때는
-    // transition 없이
-    // 손가락을 그대로 따라감
-    // ====================
 
     if (activeTab === "prepare") {
       setAnimateTopArea(false);
@@ -207,6 +213,26 @@ export default function TripDetail() {
 
       setTabsTop(Math.max(getHeaderBottom(), HERO_HEIGHT - scrollTop));
     }
+  };
+
+  // ====================
+  // History State
+  // ====================
+
+  const syncTabState = (nextTab) => {
+    const nextState = {
+      ...(location.state || {}),
+      tab: nextTab,
+    };
+
+    if (nextTab !== "schedule") {
+      delete nextState.date;
+    }
+
+    navigate(location.pathname, {
+      replace: true,
+      state: nextState,
+    });
   };
 
   // ====================
@@ -222,55 +248,44 @@ export default function TripDetail() {
       clearTimeout(topAreaTimerRef.current);
     }
 
-    // ====================
-    // Hero + Tabs 세로 이동
-    // ====================
-
     setAnimateTopArea(true);
 
+    // ====================
+    // 여행 준비
+    // ====================
+
     if (nextTab === "prepare") {
-      /*
-        여행 준비로 돌아갈 때
-
-        Prepare가 마지막으로 가지고 있던
-        실제 scrollTop 기준으로
-
-        Hero와 Tabs 위치를 복원
-      */
+      setIsHeroVisible(true);
 
       setHeroOffset(getPrepareHeroOffset());
 
       setTabsTop(getPrepareTabsTop());
-    } else {
-      /*
-        일정 / 지출
+    }
 
-        Hero + Card는 위로 이동
-
-        Tabs는 Header 바로 아래까지 이동
-      */
-
+    // ====================
+    // 일정 / 지출
+    // ====================
+    else {
       setHeroOffset(getHeroCollapsedOffset());
 
       setTabsTop(getHeaderBottom());
     }
 
-    // ====================
-    // Horizontal Slide
-    //
-    // 각 Page의 scrollTop은
-    // 절대 변경하지 않음
-    // ====================
-
     setActiveTab(nextTab);
+
+    syncTabState(nextTab);
 
     topAreaTimerRef.current = setTimeout(() => {
       setAnimateTopArea(false);
+
+      if (nextTab !== "prepare") {
+        setIsHeroVisible(false);
+      }
     }, SLIDE_TIME);
   };
 
   // ====================
-  // Prepare 복귀 시 Header
+  // Prepare 복귀
   // ====================
 
   useEffect(() => {
@@ -308,12 +323,62 @@ export default function TripDetail() {
   };
 
   // ====================
+  // Panel Position
+  //
+  // 각 패널 자체가
+  // 화면 100% 너비를 가진다.
+  //
+  // 현재 탭 = 0%
+  // 왼쪽 탭 = -100%
+  // 오른쪽 탭 = 100%
+  // ====================
+
+  const getPanelTransform = (panelIndex) => {
+    const difference = panelIndex - activeIndex;
+
+    return `translate3d(${difference * 100}%, 0, 0)`;
+  };
+
+  // ====================
+  // Panel Interaction
+  //
+  // 현재 탭만 클릭 / 스크롤 가능
+  // ====================
+
+  const getPanelClassName = (panelIndex) => {
+    const isActive = panelIndex === activeIndex;
+
+    return `
+      absolute
+      inset-0
+      h-full
+      w-full
+      overflow-hidden
+      transition-transform
+      ease-in-out
+      will-change-transform
+
+      ${isActive ? "z-10 pointer-events-auto" : "z-0 pointer-events-none"}
+    `;
+  };
+
+  // ====================
   // Not Found
   // ====================
 
   if (!trip) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-white px-5 text-[#191919]">
+      <main
+        className="
+          flex
+          min-h-dvh
+          items-center
+          justify-center
+          bg-white
+          px-5
+          text-[#191919]
+        "
+      >
         <p className="text-[16px] leading-[24px]">
           여행 정보를 찾을 수 없어요.
         </p>
@@ -322,7 +387,7 @@ export default function TripDetail() {
   }
 
   // ====================
-  // Header 상태
+  // Header
   // ====================
 
   const isHeaderSolid = activeTab === "prepare" ? isPrepareHeaderSolid : true;
@@ -332,15 +397,27 @@ export default function TripDetail() {
   // ====================
 
   return (
-    <main className="relative h-dvh overflow-hidden bg-white text-[#191919]">
-      <div className="relative mx-auto h-dvh w-full max-w-[390px] overflow-hidden">
+    <main
+      className="
+        relative
+        h-dvh
+        overflow-hidden
+        bg-white
+        text-[#191919]
+      "
+    >
+      <div
+        className="
+          relative
+          mx-auto
+          h-dvh
+          w-full
+          max-w-[390px]
+          overflow-hidden
+        "
+      >
         {/* ====================
             Shared Hero
-
-            좌우 이동 X
-            세로 이동만
-
-            탭 클릭 시 300ms
         ==================== */}
 
         <div
@@ -352,6 +429,8 @@ export default function TripDetail() {
             z-20
             w-full
             will-change-transform
+
+            ${isHeroVisible ? "visible" : "invisible"}
 
             ${animateTopArea ? "transition-transform ease-in-out" : ""}
           `}
@@ -381,11 +460,6 @@ export default function TripDetail() {
 
         {/* ====================
             Tabs
-
-            좌우 이동 X
-            세로 이동만
-
-            탭 클릭 시 300ms
         ==================== */}
 
         <TripDetailTabs
@@ -397,79 +471,68 @@ export default function TripDetail() {
         />
 
         {/* ====================
-            Horizontal Viewport
+            Tab Viewport
         ==================== */}
 
-        <div className="h-full w-full overflow-hidden">
+        <div
+          className="
+            relative
+            h-full
+            w-full
+            overflow-hidden
+          "
+        >
           {/* ====================
-              Horizontal Track
-
-              Prepare
-              Schedule
-              Expense
-
-              모두 300ms
+              Prepare Panel
           ==================== */}
 
           <div
-            className="
-              flex
-              h-full
-              items-stretch
-              transition-transform
-              ease-in-out
-              will-change-transform
-            "
+            className={getPanelClassName(0)}
             style={{
-              width: "300%",
-
-              transform: `translateX(-${activeIndex * (100 / 3)}%)`,
+              transform: getPanelTransform(0),
 
               transitionDuration: `${SLIDE_TIME}ms`,
             }}
           >
-            {/* ====================
-                Prepare
-            ==================== */}
+            <TripPrepare
+              trip={trip}
+              containerRef={prepareScrollRef}
+              onScroll={handlePrepareScroll}
+            />
+          </div>
 
-            <div
-              className="h-full shrink-0"
-              style={{
-                width: "33.333333%",
-              }}
-            >
-              <TripPrepare
-                trip={trip}
-                containerRef={prepareScrollRef}
-                onScroll={handlePrepareScroll}
-              />
-            </div>
+          {/* ====================
+              Schedule Panel
+          ==================== */}
 
-            {/* ====================
-                Schedule
-            ==================== */}
+          <div
+            className={getPanelClassName(1)}
+            style={{
+              transform: getPanelTransform(1),
 
-            <div
-              className="h-full shrink-0"
-              style={{
-                width: "33.333333%",
-              }}
-            >
-              <TripSchedule containerRef={scheduleScrollRef} />
-            </div>
+              transitionDuration: `${SLIDE_TIME}ms`,
+            }}
+          >
+            <TripSchedule
+              trip={trip}
+              containerRef={scheduleScrollRef}
+              initialDate={returnScheduleDate}
+            />
+          </div>
 
-            {/* ====================
-                Expense
-            ==================== */}
+          {/* ====================
+              Expense Panel
+          ==================== */}
 
-            <div
-              className="h-full shrink-0"
-              style={{
-                width: "33.333333%",
-              }}
-            >
-              <TripExpense containerRef={expenseScrollRef} />
-            </div>
+          <div
+            className={getPanelClassName(2)}
+            style={{
+              transform: getPanelTransform(2),
+
+              transitionDuration: `${SLIDE_TIME}ms`,
+            }}
+          >
+            <TripExpense containerRef={expenseScrollRef} />
           </div>
         </div>
 

@@ -9,6 +9,7 @@ import SignUp from "../pages/signUp/SignUp";
 import Home from "../pages/home/Home";
 import TripCreate from "../pages/tripCreate/TripCreate";
 import TripDetail from "../pages/tripDetail/TripDetail";
+import Map from "../pages/map/Map";
 
 export default function Router() {
   return (
@@ -45,6 +46,15 @@ export default function Router() {
           element={
             <ProtectedRoute>
               <TripDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/map"
+          element={
+            <ProtectedRoute>
+              <Map />
             </ProtectedRoute>
           }
         />

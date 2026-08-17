@@ -30,7 +30,7 @@ export default function Home() {
           right={
             <Link
               to="/map"
-              className="flex flex-col items-center text-[#555555]"
+              className="click-scale-sm flex flex-col items-center text-[#555555]"
             >
               <Search size={22} strokeWidth={1.5} />
 

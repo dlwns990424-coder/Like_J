@@ -43,7 +43,7 @@ export default function Login() {
       <div className="mx-auto flex min-h-[calc(100dvh-80px)] w-full max-w-[390px] flex-col">
         <Link
           to="/"
-          className="text-center text-[28px] font-bold leading-[36px] tracking-[-0.02em]"
+          className="click-scale text-center text-[28px] font-bold leading-[36px] tracking-[-0.02em]"
         >
           LOGO
         </Link>
@@ -95,7 +95,7 @@ export default function Login() {
 
             <button
               type="submit"
-              className="mt-[16px] flex h-[52px] w-full items-center justify-center rounded-xl bg-[#3478F6] text-[16px] font-semibold leading-[24px] text-white"
+              className="click-scale mt-[16px] flex h-[52px] w-full items-center justify-center rounded-xl bg-[#3478F6] text-[16px] font-semibold leading-[24px] text-white"
             >
               로그인
             </button>
@@ -104,7 +104,7 @@ export default function Login() {
           <div className="mt-[20px] flex items-center justify-center gap-[10px] text-[14px] leading-[20px]">
             <span className="text-[#555555]">아직 계정이 없으신가요?</span>
 
-            <Link to="/signup" className="text-[#3478F6]">
+            <Link to="/signup" className="click-scale text-[#3478F6]">
               회원가입
             </Link>
           </div>

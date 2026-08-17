@@ -5,7 +5,7 @@ export default function TripCard({ trip }) {
   return (
     <Link
       to={`/trip/${trip.id}`}
-      className="flex h-[120px] w-full gap-[20px] overflow-hidden rounded-xl border border-[#D9D9D9]"
+      className="click-scale flex h-[120px] w-full gap-[20px] overflow-hidden rounded-xl border border-[#D9D9D9]"
     >
       {trip.imageUrl ? (
         <img

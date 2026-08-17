@@ -15,7 +15,7 @@ export default function MyTrips({ currentUser, trips }) {
         {trips.length > 0 && (
           <Link
             to="/mypage"
-            className="text-[14px] leading-[20px] tracking-[-0.01em] text-[#555555]"
+            className="click-scale inline-block text-[14px] leading-[20px] tracking-[-0.01em] text-[#555555]"
           >
             더보기 →
           </Link>
@@ -31,7 +31,7 @@ export default function MyTrips({ currentUser, trips }) {
 
             <Link
               to="/trip-create"
-              className="text-[16px] font-semibold leading-[24px] text-[#3478F6]"
+              className="click-scale inline-block text-[16px] font-semibold leading-[24px] text-[#3478F6]"
             >
               + 여행 만들기
             </Link>

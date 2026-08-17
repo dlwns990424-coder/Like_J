@@ -1,9 +1,26 @@
 import { ChevronDown, MapPin, MoreHorizontal, Plus } from "lucide-react";
 
+import { useNavigate } from "react-router-dom";
+
 import { getFavoritePlacesByTripId } from "../../../lib/storage";
 
 export default function FavoritePlaces({ tripId }) {
+  const navigate = useNavigate();
+
   const favoritePlaces = getFavoritePlacesByTripId(tripId);
+
+  // ====================
+  // Map으로 장소 추가
+  // ====================
+
+  const handleAddPlace = () => {
+    navigate("/map", {
+      state: {
+        mode: "favorite",
+        tripId,
+      },
+    });
+  };
 
   return (
     <section>
@@ -18,11 +35,15 @@ export default function FavoritePlaces({ tripId }) {
 
         <button
           type="button"
-          className="flex h-[32px] w-[32px] items-center justify-center"
+          className="click-scale-sm flex h-[32px] w-[32px] items-center justify-center"
         >
           <MoreHorizontal size={22} strokeWidth={1.5} />
         </button>
       </div>
+
+      {/* ====================
+          관심 장소 List
+      ==================== */}
 
       {favoritePlaces.length > 0 && (
         <div className="mt-[12px] flex flex-col gap-[10px]">
@@ -38,14 +59,22 @@ export default function FavoritePlaces({ tripId }) {
                   className="mt-[2px] shrink-0 text-[#555555]"
                 />
 
-                <div>
+                <div className="min-w-0">
                   <p className="text-[16px] font-semibold leading-[24px]">
                     {place.name}
                   </p>
 
-                  <p className="mt-[2px] text-[12px] leading-[18px] text-[#888888]">
-                    {place.address}
-                  </p>
+                  {place.category && (
+                    <p className="mt-[2px] text-[12px] leading-[18px] text-[#555555]">
+                      {place.category}
+                    </p>
+                  )}
+
+                  {place.address && (
+                    <p className="mt-[4px] text-[12px] leading-[18px] text-[#888888]">
+                      {place.address}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -53,9 +82,14 @@ export default function FavoritePlaces({ tripId }) {
         </div>
       )}
 
+      {/* ====================
+          장소 추가
+      ==================== */}
+
       <button
         type="button"
-        className="mt-[12px] flex h-[38px] w-full items-center gap-[10px] rounded-xl bg-[#F5F5F5] px-[10px] text-[14px] leading-[20px] text-[#888888]"
+        onClick={handleAddPlace}
+        className="click-scale mt-[12px] flex h-[38px] w-full items-center gap-[10px] rounded-xl bg-[#F5F5F5] px-[10px] text-[14px] leading-[20px] text-[#888888]"
       >
         <Plus size={18} strokeWidth={1.5} />
 

@@ -31,7 +31,7 @@ export default function PopularDestinations() {
           <Link
             key={destination.id}
             to={`/map?search=${encodeURIComponent(destination.name)}`}
-            className="relative h-[120px] min-w-[100px] overflow-hidden rounded-xl bg-[#D9D9D9]"
+            className="click-scale relative block h-[120px] min-w-[100px] shrink-0 overflow-hidden rounded-xl bg-[#D9D9D9]"
           >
             <span className="absolute bottom-[10px] left-[10px] text-[16px] font-semibold leading-[24px] text-white">
               {destination.name}
