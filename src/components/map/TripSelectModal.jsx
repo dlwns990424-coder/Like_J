@@ -1,72 +1,121 @@
 import { CalendarDays, X } from "lucide-react";
 
-export default function TripSelectModal({
-  isOpen,
-  trips,
-  onClose,
-  onSelect,
-  onCreateTrip,
-}) {
+import { createPortal } from "react-dom";
+
+export default function TripSelectModal({ isOpen, trips, onClose, onSelect }) {
   if (!isOpen) {
     return null;
   }
 
-  return (
+  return createPortal(
     <div
       className="
         fixed
         inset-0
-        z-[100]
+        z-[99999]
         flex
         items-end
         justify-center
         bg-black/40
-        px-5
-        pb-[calc(20px+env(safe-area-inset-bottom))]
       "
       onClick={onClose}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+      }}
     >
-      <div
+      {/* ====================
+          Bottom Sheet
+      ==================== */}
+
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="trip-select-title"
         className="
+          relative
+          z-[100000]
+          max-h-[80dvh]
           w-full
-          max-w-[350px]
-          rounded-2xl
-          border
-          border-[#D9D9D9]
+          max-w-[390px]
+          overflow-y-auto
+          rounded-t-[24px]
           bg-white
-          p-[20px]
+          px-5
+          pt-[20px]
+          pb-[calc(24px+env(safe-area-inset-bottom))]
+          text-[#191919]
         "
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+        }}
       >
         {/* ====================
             Header
         ==================== */}
 
-        <div className="flex items-center justify-between">
-          <h2 className="text-[20px] font-semibold leading-[28px] tracking-[-0.02em]">
-            여행 선택
-          </h2>
+        <div className="flex items-start justify-between">
+          <div className="min-w-0 flex-1">
+            <h2
+              id="trip-select-title"
+              className="
+                text-[20px]
+                font-semibold
+                leading-[28px]
+                tracking-[-0.02em]
+              "
+            >
+              여행 선택
+            </h2>
+
+            <p
+              className="
+                mt-[4px]
+                text-[13px]
+                leading-[20px]
+                text-[#888888]
+              "
+            >
+              관심 장소를 추가할 여행을 선택해주세요.
+            </p>
+          </div>
 
           <button
             type="button"
             onClick={onClose}
             aria-label="닫기"
-            className="click-scale-sm flex h-[32px] w-[32px] items-center justify-center"
+            className="
+              click-scale-sm
+              flex
+              h-[36px]
+              w-[36px]
+              shrink-0
+              items-center
+              justify-center
+            "
           >
             <X size={20} strokeWidth={1.5} />
           </button>
         </div>
-
-        <p className="mt-[8px] text-[14px] leading-[20px] text-[#555555]">
-          관심 장소를 추가할 여행을 선택해주세요.
-        </p>
 
         {/* ====================
             Trip List
         ==================== */}
 
         {trips.length > 0 ? (
-          <div className="mt-[20px] flex max-h-[300px] flex-col gap-[10px] overflow-y-auto">
+          <div
+            className="
+              hide-scrollbar
+              mt-[20px]
+              flex
+              max-h-[420px]
+              flex-col
+              gap-[10px]
+              overflow-y-auto
+            "
+          >
             {trips.map((trip) => (
               <button
                 key={trip.id}
@@ -78,23 +127,67 @@ export default function TripSelectModal({
                   rounded-xl
                   border
                   border-[#D9D9D9]
-                  p-[12px]
+                  bg-white
+                  p-[14px]
                   text-left
                 "
               >
-                <p className="text-[16px] font-semibold leading-[24px]">
+                {/* ====================
+                    Title
+                ==================== */}
+
+                <p
+                  className="
+                    truncate
+                    text-[16px]
+                    font-semibold
+                    leading-[24px]
+                  "
+                >
                   {trip.title}
                 </p>
 
-                <p className="mt-[2px] text-[13px] leading-[18px] text-[#555555]">
-                  {trip.city ? `${trip.country} · ${trip.city}` : trip.country}
-                </p>
+                {/* ====================
+                    Destination
+                ==================== */}
 
-                <div className="mt-[8px] flex items-center gap-[6px] text-[12px] leading-[18px] text-[#888888]">
+                {(trip.city || trip.country) && (
+                  <p
+                    className="
+                      mt-[2px]
+                      truncate
+                      text-[13px]
+                      leading-[18px]
+                      text-[#555555]
+                    "
+                  >
+                    {trip.city
+                      ? `${trip.country} · ${trip.city}`
+                      : trip.country}
+                  </p>
+                )}
+
+                {/* ====================
+                    Date
+                ==================== */}
+
+                <div
+                  className="
+                    mt-[8px]
+                    flex
+                    items-center
+                    gap-[6px]
+                    text-[12px]
+                    leading-[18px]
+                    text-[#888888]
+                  "
+                >
                   <CalendarDays size={14} strokeWidth={1.5} />
 
                   <span>
-                    {trip.startDate} ~ {trip.endDate}
+                    {trip.startDate}
+                    {" ~ "}
+                    {trip.endDate}
                   </span>
                 </div>
               </button>
@@ -102,37 +195,37 @@ export default function TripSelectModal({
           </div>
         ) : (
           /* ====================
-              여행 없음
+              추가 가능한 여행 없음
           ==================== */
 
-          <div className="mt-[28px]">
-            <p className="text-center text-[14px] leading-[20px] text-[#888888]">
-              아직 등록된 여행이 없어요.
-            </p>
-
-            <button
-              type="button"
-              onClick={onCreateTrip}
+          <div
+            className="
+              mt-[24px]
+              flex
+              min-h-[130px]
+              items-center
+              justify-center
+              rounded-xl
+              bg-[#F5F5F5]
+              px-[24px]
+            "
+          >
+            <p
               className="
-                click-scale
-                mt-[20px]
-                flex
-                h-[48px]
-                w-full
-                items-center
-                justify-center
-                rounded-xl
-                bg-[#3478F6]
-                text-[15px]
-                font-semibold
-                text-white
+                text-center
+                text-[13px]
+                leading-[20px]
+                text-[#888888]
               "
             >
-              여행 계획 만들기
-            </button>
+              관심 장소를 추가할 수 있는 여행이 없어요.
+              <br />
+              진행 중이거나 예정된 여행에만 추가할 수 있어요.
+            </p>
           </div>
         )}
-      </div>
-    </div>
+      </section>
+    </div>,
+    document.body,
   );
 }

@@ -3,7 +3,7 @@ import { ArrowLeft, MapPin, Search, X } from "lucide-react";
 export default function MapHeader({
   isSearchMode,
   keyword,
-  searchResults,
+  searchResults = [],
   onBack,
   onSearchOpen,
   onSearchChange,
@@ -24,7 +24,7 @@ export default function MapHeader({
       "
     >
       {/* ====================
-          기본 Map Header
+          기본 Header
       ==================== */}
 
       {!isSearchMode && (
@@ -78,38 +78,39 @@ export default function MapHeader({
       ==================== */}
 
       {isSearchMode && (
-        <div className="relative flex items-start gap-[10px]">
-          {/* 뒤로가기 */}
+        <>
+          <div className="flex items-center gap-[10px]">
+            {/* 뒤로가기 */}
 
-          <button
-            type="button"
-            onClick={onBack}
-            className="
-              click-scale-sm
-              flex
-              h-[40px]
-              w-[40px]
-              shrink-0
-              items-center
-              justify-center
-              rounded-full
-              border
-              border-[#D9D9D9]
-              bg-white
-            "
-          >
-            <ArrowLeft size={20} strokeWidth={1.5} />
-          </button>
+            <button
+              type="button"
+              onClick={onBack}
+              className="
+                click-scale-sm
+                flex
+                h-[40px]
+                w-[40px]
+                shrink-0
+                items-center
+                justify-center
+                rounded-full
+                border
+                border-[#D9D9D9]
+                bg-white
+              "
+            >
+              <ArrowLeft size={20} strokeWidth={1.5} />
+            </button>
 
-          <div className="relative flex-1">
-            {/* 검색창 */}
+            {/* 검색 Form */}
 
             <form
               onSubmit={onSearchSubmit}
               className="
                 flex
                 h-[40px]
-                w-full
+                min-w-0
+                flex-1
                 items-center
                 rounded-xl
                 border
@@ -121,7 +122,10 @@ export default function MapHeader({
               <Search
                 size={18}
                 strokeWidth={1.5}
-                className="shrink-0 text-[#555555]"
+                className="
+                  shrink-0
+                  text-[#555555]
+                "
               />
 
               <input
@@ -142,8 +146,6 @@ export default function MapHeader({
                 "
               />
 
-              {/* 검색 닫기 */}
-
               <button
                 type="button"
                 onClick={onSearchClose}
@@ -161,69 +163,98 @@ export default function MapHeader({
                 <X size={17} strokeWidth={1.5} />
               </button>
             </form>
-
-            {/* ====================
-                검색 결과
-            ==================== */}
-
-            {searchResults.length > 0 && (
-              <div
-                className="
-                  absolute
-                  top-[48px]
-                  left-0
-                  z-50
-                  w-full
-                  overflow-hidden
-                  rounded-xl
-                  border
-                  border-[#D9D9D9]
-                  bg-white
-                "
-              >
-                {searchResults.map((prediction) => (
-                  <button
-                    key={prediction.placeId}
-                    type="button"
-                    onClick={() => onPlaceSelect(prediction)}
-                    className="
-                      click-scale
-                      flex
-                      w-full
-                      items-start
-                      gap-[10px]
-                      border-b
-                      border-[#EEEEEE]
-                      px-[12px]
-                      py-[12px]
-                      text-left
-                      last:border-b-0
-                    "
-                  >
-                    <MapPin
-                      size={17}
-                      strokeWidth={1.5}
-                      className="mt-[2px] shrink-0 text-[#555555]"
-                    />
-
-                    <div className="min-w-0">
-                      <p className="truncate text-[14px] font-medium leading-[20px]">
-                        {prediction.mainText?.toString() ||
-                          prediction.text?.toString()}
-                      </p>
-
-                      {prediction.secondaryText && (
-                        <p className="mt-[2px] truncate text-[12px] leading-[18px] text-[#888888]">
-                          {prediction.secondaryText.toString()}
-                        </p>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
-        </div>
+
+          {/* ====================
+              검색 결과
+          ==================== */}
+
+          {searchResults.length > 0 && (
+            <div
+              className="
+                mt-[10px]
+                max-h-[320px]
+                overflow-y-auto
+                rounded-xl
+                border
+                border-[#D9D9D9]
+                bg-white
+              "
+            >
+              {searchResults.map((place) => (
+                <button
+                  key={place.id}
+                  type="button"
+                  onClick={() => onPlaceSelect(place)}
+                  className="
+                    click-scale
+                    flex
+                    w-full
+                    items-start
+                    gap-[10px]
+                    border-b
+                    border-[#EEEEEE]
+                    px-[12px]
+                    py-[12px]
+                    text-left
+                    last:border-b-0
+                  "
+                >
+                  <MapPin
+                    size={18}
+                    strokeWidth={1.5}
+                    className="
+                      mt-[2px]
+                      shrink-0
+                      text-[#555555]
+                    "
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="
+                        truncate
+                        text-[14px]
+                        font-semibold
+                        leading-[20px]
+                      "
+                    >
+                      {place.name}
+                    </p>
+
+                    {place.category && (
+                      <p
+                        className="
+                          mt-[2px]
+                          truncate
+                          text-[11px]
+                          leading-[16px]
+                          text-[#555555]
+                        "
+                      >
+                        {place.category}
+                      </p>
+                    )}
+
+                    {place.address && (
+                      <p
+                        className="
+                          mt-[2px]
+                          truncate
+                          text-[11px]
+                          leading-[16px]
+                          text-[#888888]
+                        "
+                      >
+                        {place.address}
+                      </p>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </header>
   );

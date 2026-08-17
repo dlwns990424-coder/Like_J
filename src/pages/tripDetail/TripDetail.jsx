@@ -216,7 +216,8 @@ export default function TripDetail() {
   };
 
   // ====================
-  // History State
+  // 현재 탭
+  // History State 저장
   // ====================
 
   const syncTabState = (nextTab) => {
@@ -236,7 +237,7 @@ export default function TripDetail() {
   };
 
   // ====================
-  // 탭 변경
+  // Tab Change
   // ====================
 
   const handleTabChange = (nextTab) => {
@@ -251,7 +252,7 @@ export default function TripDetail() {
     setAnimateTopArea(true);
 
     // ====================
-    // 여행 준비
+    // Prepare
     // ====================
 
     if (nextTab === "prepare") {
@@ -263,7 +264,7 @@ export default function TripDetail() {
     }
 
     // ====================
-    // 일정 / 지출
+    // Schedule / Expense
     // ====================
     else {
       setHeroOffset(getHeroCollapsedOffset());
@@ -285,7 +286,7 @@ export default function TripDetail() {
   };
 
   // ====================
-  // Prepare 복귀
+  // Prepare 복귀 Header
   // ====================
 
   useEffect(() => {
@@ -320,46 +321,6 @@ export default function TripDetail() {
 
   const handleDelete = () => {
     console.log("여행 삭제");
-  };
-
-  // ====================
-  // Panel Position
-  //
-  // 각 패널 자체가
-  // 화면 100% 너비를 가진다.
-  //
-  // 현재 탭 = 0%
-  // 왼쪽 탭 = -100%
-  // 오른쪽 탭 = 100%
-  // ====================
-
-  const getPanelTransform = (panelIndex) => {
-    const difference = panelIndex - activeIndex;
-
-    return `translate3d(${difference * 100}%, 0, 0)`;
-  };
-
-  // ====================
-  // Panel Interaction
-  //
-  // 현재 탭만 클릭 / 스크롤 가능
-  // ====================
-
-  const getPanelClassName = (panelIndex) => {
-    const isActive = panelIndex === activeIndex;
-
-    return `
-      absolute
-      inset-0
-      h-full
-      w-full
-      overflow-hidden
-      transition-transform
-      ease-in-out
-      will-change-transform
-
-      ${isActive ? "z-10 pointer-events-auto" : "z-0 pointer-events-none"}
-    `;
   };
 
   // ====================
@@ -471,68 +432,82 @@ export default function TripDetail() {
         />
 
         {/* ====================
-            Tab Viewport
+            Horizontal Viewport
         ==================== */}
 
-        <div
-          className="
-            relative
-            h-full
-            w-full
-            overflow-hidden
-          "
-        >
-          {/* ====================
-              Prepare Panel
-          ==================== */}
-
+        <div className="h-full w-full overflow-hidden">
           <div
-            className={getPanelClassName(0)}
+            className="
+              flex
+              h-full
+              items-stretch
+              transition-transform
+              ease-in-out
+              will-change-transform
+            "
             style={{
-              transform: getPanelTransform(0),
+              width: "300%",
+
+              transform: `translateX(-${activeIndex * (100 / 3)}%)`,
 
               transitionDuration: `${SLIDE_TIME}ms`,
             }}
           >
-            <TripPrepare
-              trip={trip}
-              containerRef={prepareScrollRef}
-              onScroll={handlePrepareScroll}
-            />
-          </div>
+            {/* ====================
+                Prepare
+            ==================== */}
 
-          {/* ====================
-              Schedule Panel
-          ==================== */}
+            <div
+              className="
+                h-full
+                shrink-0
+              "
+              style={{
+                width: "33.333333%",
+              }}
+            >
+              <TripPrepare
+                trip={trip}
+                containerRef={prepareScrollRef}
+                onScroll={handlePrepareScroll}
+              />
+            </div>
 
-          <div
-            className={getPanelClassName(1)}
-            style={{
-              transform: getPanelTransform(1),
+            {/* ====================
+                Schedule
+            ==================== */}
 
-              transitionDuration: `${SLIDE_TIME}ms`,
-            }}
-          >
-            <TripSchedule
-              trip={trip}
-              containerRef={scheduleScrollRef}
-              initialDate={returnScheduleDate}
-            />
-          </div>
+            <div
+              className="
+                h-full
+                shrink-0
+              "
+              style={{
+                width: "33.333333%",
+              }}
+            >
+              <TripSchedule
+                trip={trip}
+                containerRef={scheduleScrollRef}
+                initialDate={returnScheduleDate}
+              />
+            </div>
 
-          {/* ====================
-              Expense Panel
-          ==================== */}
+            {/* ====================
+                Expense
+            ==================== */}
 
-          <div
-            className={getPanelClassName(2)}
-            style={{
-              transform: getPanelTransform(2),
-
-              transitionDuration: `${SLIDE_TIME}ms`,
-            }}
-          >
-            <TripExpense containerRef={expenseScrollRef} />
+            <div
+              className="
+                h-full
+                shrink-0
+              "
+              style={{
+                width: "33.333333%",
+              }}
+            >
+              <TripExpense containerRef={expenseScrollRef} />
+            </div>
           </div>
         </div>
 

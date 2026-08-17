@@ -74,14 +74,6 @@ const getTripDates = (startDate, endDate) => {
   return dates;
 };
 
-const getWeekday = (date) => {
-  return ["일", "월", "화", "수", "목", "금", "토"][date.getDay()];
-};
-
-const getShortDate = (date) => {
-  return `${date.getMonth() + 1}/${date.getDate()}`;
-};
-
 // ====================
 // Time Sorting
 // ====================
@@ -127,12 +119,6 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
   };
 
   const [selectedDate, setSelectedDate] = useState(getInitialSelectedDate);
-
-  // ====================
-  // Date Content Animation
-  // ====================
-
-  const [isDateContentVisible, setIsDateContentVisible] = useState(true);
 
   // ====================
   // Schedule
@@ -184,7 +170,7 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
   const favoritePlaces = getFavoritePlacesByTripId(trip.id);
 
   // ====================
-  // Reload Schedule
+  // Refresh Schedule
   // ====================
 
   const refreshSchedules = () => {
@@ -192,7 +178,7 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
   };
 
   // ====================
-  // Reload Accommodation
+  // Refresh Accommodation
   // ====================
 
   const refreshAccommodations = () => {
@@ -206,7 +192,7 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
   };
 
   // ====================
-  // Reload Memo
+  // Refresh Memo
   // ====================
 
   const refreshMemo = () => {
@@ -231,6 +217,7 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
 
   useEffect(() => {
     refreshAccommodations();
+
     refreshMemo();
   }, [trip.id, selectedDate]);
 
@@ -247,18 +234,10 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
       (date) => formatDateKey(date) === initialDate,
     );
 
-    if (exists && initialDate !== selectedDate) {
+    if (exists) {
       setSelectedDate(initialDate);
     }
   }, [initialDate, tripDates]);
-
-  // ====================
-  // Selected Date Object
-  // ====================
-
-  const selectedDateObject = tripDates.find(
-    (date) => formatDateKey(date) === selectedDate,
-  );
 
   // ====================
   // Selected Schedules
@@ -269,9 +248,17 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
       (schedule) => schedule.date === selectedDate,
     );
 
+    // ====================
+    // Added Order
+    // ====================
+
     if (sortType === "order") {
       return [...filtered].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }
+
+    // ====================
+    // Time Order
+    // ====================
 
     return [...filtered].sort((a, b) => {
       const timeDifference = getTimeValue(a) - getTimeValue(b);
@@ -286,6 +273,9 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
 
   // ====================
   // Date Select
+  //
+  // 애니메이션 없음
+  // 즉시 날짜 변경
   // ====================
 
   const handleDateSelect = (date) => {
@@ -295,33 +285,13 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
       return;
     }
 
-    // ====================
-    // Fade Out
-    // ====================
+    setSelectedDate(nextDate);
 
-    setIsDateContentVisible(false);
+    setIsEditMode(false);
 
-    // ====================
-    // 날짜 데이터 교체
-    // ====================
+    setSelectedScheduleIds([]);
 
-    window.setTimeout(() => {
-      setSelectedDate(nextDate);
-
-      setIsEditMode(false);
-
-      setSelectedScheduleIds([]);
-
-      setIsMemoOpen(false);
-
-      // ====================
-      // Fade In
-      // ====================
-
-      requestAnimationFrame(() => {
-        setIsDateContentVisible(true);
-      });
-    }, 100);
+    setIsMemoOpen(false);
   };
 
   // ====================
@@ -616,6 +586,10 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
     refreshSchedules();
   };
 
+  // ====================
+  // Render
+  // ====================
+
   return (
     <div
       ref={containerRef}
@@ -632,7 +606,7 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
     >
       <section className="px-5 pt-[16px]">
         {/* ====================
-            Date Tabs
+            Date
         ==================== */}
 
         <ScheduleDateTabs
@@ -642,125 +616,100 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
         />
 
         {/* ====================
-            Date Content
+            Accommodation
         ==================== */}
 
-        <div
-          className={`
-            origin-top
-            transition-[opacity,transform]
-            duration-200
-            ease-out
+        <ScheduleAccommodation
+          accommodations={accommodations}
+          onAdd={handleAccommodationOpen}
+          onDelete={handleAccommodationDelete}
+        />
 
-            ${
-              isDateContentVisible
-                ? "translate-y-0 scale-[1] opacity-100"
-                : "translate-y-[4px] scale-[0.995] opacity-0"
-            }
-          `}
-        >
+        {/* ====================
+            Memo
+        ==================== */}
+
+        <ScheduleMemo memo={memo} onClick={handleMemoOpen} />
+
+        {/* ====================
+            Controls
+
+            ...
+            정렬 기준
+        ==================== */}
+
+        <div className="mt-[6px]">
           {/* ====================
-              Date Title
+              Edit
+              ... 위
           ==================== */}
 
-          {selectedDateObject && (
-            <h2
-              className="
-                mt-[18px]
-                text-[18px]
-                font-semibold
-                leading-[26px]
-                tracking-[-0.01em]
-              "
-            >
-              {getWeekday(selectedDateObject)}{" "}
-              {getShortDate(selectedDateObject)}
-            </h2>
-          )}
-
-          {/* ====================
-              Accommodation
-          ==================== */}
-
-          <ScheduleAccommodation
-            accommodations={accommodations}
-            onAdd={handleAccommodationOpen}
-            onDelete={handleAccommodationDelete}
-          />
-
-          {/* ====================
-              Memo
-          ==================== */}
-
-          <ScheduleMemo memo={memo} onClick={handleMemoOpen} />
-
-          {/* ====================
-              Controls
-          ==================== */}
-
-          <div className="mt-[6px]">
-            <ScheduleEditMenu
-              isEditMode={isEditMode}
-              selectedSchedules={selectedSchedules}
-              selectedScheduleIds={selectedScheduleIds}
-              onEditStart={handleEditStart}
-              onEditComplete={handleEditComplete}
-              onSelectAll={handleSelectAll}
-              onSelectedDelete={handleSelectedDelete}
-              onDeleteAll={handleDeleteAll}
-            />
-
-            {!isEditMode && (
-              <div className="mt-[2px]">
-                <ScheduleSortMenu sortType={sortType} onChange={setSortType} />
-              </div>
-            )}
-          </div>
-
-          {/* ====================
-              Timeline
-          ==================== */}
-
-          <ScheduleTimeline
-            schedules={selectedSchedules}
+          <ScheduleEditMenu
             isEditMode={isEditMode}
+            selectedSchedules={selectedSchedules}
             selectedScheduleIds={selectedScheduleIds}
-            onSelectSchedule={handleScheduleSelect}
-            onTimeSave={handleTimeSave}
+            onEditStart={handleEditStart}
+            onEditComplete={handleEditComplete}
+            onSelectAll={handleSelectAll}
+            onSelectedDelete={handleSelectedDelete}
+            onDeleteAll={handleDeleteAll}
           />
 
           {/* ====================
-              Add Place
+              Sort
+              ... 아래
           ==================== */}
 
           {!isEditMode && (
-            <button
-              type="button"
-              onClick={handlePlaceAdd}
-              className="
-                click-scale
-                mt-[8px]
-                flex
-                h-[42px]
-                w-full
-                items-center
-                gap-[10px]
-                rounded-xl
-                bg-[#F5F5F5]
-                px-[12px]
-                text-[14px]
-                leading-[20px]
-                text-[#888888]
-              "
-            >
-              <MapPin size={17} strokeWidth={1.5} />
-
-              <span>장소 추가</span>
-
-              <Plus size={16} strokeWidth={1.5} className="ml-auto" />
-            </button>
+            <div className="mt-[2px]">
+              <ScheduleSortMenu sortType={sortType} onChange={setSortType} />
+            </div>
           )}
         </div>
+
+        {/* ====================
+            Timeline
+        ==================== */}
+
+        <ScheduleTimeline
+          schedules={selectedSchedules}
+          isEditMode={isEditMode}
+          selectedScheduleIds={selectedScheduleIds}
+          onSelectSchedule={handleScheduleSelect}
+          onTimeSave={handleTimeSave}
+        />
+
+        {/* ====================
+            Add Place
+        ==================== */}
+
+        {!isEditMode && (
+          <button
+            type="button"
+            onClick={handlePlaceAdd}
+            className="
+              click-scale
+              mt-[8px]
+              flex
+              h-[42px]
+              w-full
+              items-center
+              gap-[10px]
+              rounded-xl
+              bg-[#F5F5F5]
+              px-[12px]
+              text-[14px]
+              leading-[20px]
+              text-[#888888]
+            "
+          >
+            <MapPin size={17} strokeWidth={1.5} />
+
+            <span>장소 추가</span>
+
+            <Plus size={16} strokeWidth={1.5} className="ml-auto" />
+          </button>
+        )}
       </section>
 
       {/* ====================

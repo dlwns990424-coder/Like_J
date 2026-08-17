@@ -1,9 +1,3 @@
-import { useEffect, useRef } from "react";
-
-// ====================
-// Date Utils
-// ====================
-
 const formatDateKey = (date) => {
   const year = date.getFullYear();
 
@@ -22,91 +16,78 @@ const getShortDate = (date) => {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 };
 
-export default function ScheduleDateTabs({
-  dates = [],
-  selectedDate,
-  onSelect,
-}) {
-  const buttonRefs = useRef({});
-
-  // ====================
-  // 선택 날짜 자동 Scroll
-  // ====================
-
-  useEffect(() => {
-    if (!selectedDate) {
-      return;
-    }
-
-    const selectedButton = buttonRefs.current[selectedDate];
-
-    if (!selectedButton) {
-      return;
-    }
-
-    selectedButton.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center",
-    });
-  }, [selectedDate]);
+export default function ScheduleDateTabs({ dates, selectedDate, onSelect }) {
+  const selectedDateObject = dates.find(
+    (date) => formatDateKey(date) === selectedDate,
+  );
 
   return (
-    <div
-      className="
-        hide-scrollbar
-        flex
-        w-full
-        gap-[8px]
-        overflow-x-auto
-        overscroll-x-contain
-        scroll-smooth
-        py-[2px]
-      "
-    >
-      {dates.map((date) => {
-        const dateKey = formatDateKey(date);
+    <>
+      {/* ====================
+          Date Tabs
+      ==================== */}
 
-        const isSelected = dateKey === selectedDate;
+      <div
+        className="
+          hide-scrollbar
+          flex
+          gap-[8px]
+          overflow-x-auto
+          pb-[4px]
+        "
+      >
+        {dates.map((date) => {
+          const dateKey = formatDateKey(date);
 
-        return (
-          <button
-            key={dateKey}
-            ref={(element) => {
-              if (element) {
-                buttonRefs.current[dateKey] = element;
-              } else {
-                delete buttonRefs.current[dateKey];
-              }
-            }}
-            type="button"
-            onClick={() => onSelect(date)}
-            className={`
-              click-scale-sm
-              flex
-              h-[36px]
-              shrink-0
-              items-center
-              justify-center
-              rounded-full
-              px-[14px]
-              text-[12px]
-              font-semibold
-              leading-[18px]
-              transition-colors
-              duration-200
+          const isActive = dateKey === selectedDate;
 
-              ${
-                isSelected
-                  ? "bg-[#3478F6] text-white"
-                  : "bg-[#F1F1F1] text-[#888888]"
-              }
-            `}
-          >
-            {getWeekday(date)} {getShortDate(date)}
-          </button>
-        );
-      })}
-    </div>
+          return (
+            <button
+              key={dateKey}
+              type="button"
+              onClick={() => onSelect(date)}
+              className={`
+                  click-scale-sm
+                  flex
+                  h-[34px]
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  px-[12px]
+                  text-[12px]
+                  font-medium
+                  leading-[18px]
+
+                  ${
+                    isActive
+                      ? "bg-[#3478F6] text-white"
+                      : "bg-[#F0F0F0] text-[#888888]"
+                  }
+                `}
+            >
+              {getWeekday(date)} {getShortDate(date)}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ====================
+          Selected Date
+      ==================== */}
+
+      {selectedDateObject && (
+        <h2
+          className="
+            mt-[18px]
+            text-[18px]
+            font-semibold
+            leading-[26px]
+          "
+        >
+          {getWeekday(selectedDateObject)} {getShortDate(selectedDateObject)}
+        </h2>
+      )}
+    </>
   );
 }

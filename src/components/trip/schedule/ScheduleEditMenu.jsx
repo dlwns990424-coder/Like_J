@@ -1,147 +1,166 @@
 import { MoreHorizontal } from "lucide-react";
 
+import { useState } from "react";
+
 export default function ScheduleEditMenu({
   isEditMode,
-  selectedSchedules = [],
-  selectedScheduleIds = [],
+  selectedSchedules,
+  selectedScheduleIds,
   onEditStart,
   onEditComplete,
   onSelectAll,
   onSelectedDelete,
   onDeleteAll,
 }) {
-  // ====================
-  // Edit Mode
-  // ====================
+  const [isOpen, setIsOpen] = useState(false);
 
   if (isEditMode) {
-    const isAllSelected =
-      selectedSchedules.length > 0 &&
-      selectedScheduleIds.length === selectedSchedules.length;
-
     return (
-      <div className="mt-[12px]">
-        <div className="flex items-center justify-between">
-          {/* ====================
-              Left
-          ==================== */}
+      <>
+        <div className="mt-[14px] flex items-center justify-between">
+          <p className="text-[13px] text-[#555555]">
+            삭제할 일정을 선택해주세요.
+          </p>
 
           <button
             type="button"
             onClick={onSelectAll}
-            className="
-              click-scale-sm
-              text-[13px]
-              font-medium
-              leading-[20px]
-              text-[#555555]
-            "
+            className="click-scale-sm text-[13px] font-medium text-[#3478F6]"
           >
-            {isAllSelected ? "전체 선택 해제" : "전체 선택"}
+            {selectedSchedules.length > 0 &&
+            selectedScheduleIds.length === selectedSchedules.length
+              ? "전체 해제"
+              : "전체 선택"}
           </button>
+        </div>
 
-          {/* ====================
-              Right
-          ==================== */}
+        <div className="mt-[20px] flex gap-[10px]">
+          <button
+            type="button"
+            disabled={selectedScheduleIds.length === 0}
+            onClick={onSelectedDelete}
+            className={`
+              flex
+              h-[46px]
+              flex-1
+              items-center
+              justify-center
+              rounded-xl
+              border
+              text-[14px]
+              font-semibold
+
+              ${
+                selectedScheduleIds.length > 0
+                  ? "click-scale border-[#E5484D] text-[#E5484D]"
+                  : "border-[#D9D9D9] text-[#BBBBBB]"
+              }
+            `}
+          >
+            선택 삭제
+            {selectedScheduleIds.length > 0 && ` ${selectedScheduleIds.length}`}
+          </button>
 
           <button
             type="button"
             onClick={onEditComplete}
             className="
-              click-scale-sm
-              text-[13px]
+              click-scale
+              flex
+              h-[46px]
+              flex-1
+              items-center
+              justify-center
+              rounded-xl
+              bg-[#3478F6]
+              text-[14px]
               font-semibold
-              leading-[20px]
-              text-[#3478F6]
+              text-white
             "
           >
             편집 완료
           </button>
         </div>
+      </>
+    );
+  }
 
-        {/* ====================
-            Delete Actions
-        ==================== */}
+  return (
+    <div className="relative mt-[8px] flex justify-end">
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="
+          click-scale-sm
+          flex
+          h-[38px]
+          w-[38px]
+          items-center
+          justify-center
+        "
+      >
+        <MoreHorizontal size={20} strokeWidth={1.5} />
+      </button>
 
-        <div className="mt-[10px] flex gap-[8px]">
+      {isOpen && (
+        <div
+          className="
+            absolute
+            top-[44px]
+            right-0
+            z-50
+            w-[150px]
+            overflow-hidden
+            rounded-xl
+            border
+            border-[#D9D9D9]
+            bg-white
+          "
+        >
           <button
             type="button"
-            onClick={onSelectedDelete}
-            disabled={selectedScheduleIds.length === 0}
-            className={`
+            onClick={() => {
+              setIsOpen(false);
+
+              onEditStart();
+            }}
+            className="
               click-scale
               flex
-              h-[36px]
-              flex-1
+              h-[42px]
+              w-full
               items-center
-              justify-center
-              rounded-lg
-              text-[12px]
-              font-semibold
-
-              ${
-                selectedScheduleIds.length > 0
-                  ? "bg-[#FFF0F0] text-[#E5484D]"
-                  : "cursor-default bg-[#F5F5F5] text-[#BBBBBB]"
-              }
-            `}
+              px-[12px]
+              text-[13px]
+            "
           >
-            선택 삭제
-            {selectedScheduleIds.length > 0 &&
-              ` (${selectedScheduleIds.length})`}
+            일정 편집
           </button>
 
           <button
             type="button"
-            onClick={onDeleteAll}
-            disabled={selectedSchedules.length === 0}
-            className={`
+            onClick={() => {
+              setIsOpen(false);
+
+              onDeleteAll();
+            }}
+            className="
               click-scale
               flex
-              h-[36px]
-              flex-1
+              h-[42px]
+              w-full
               items-center
-              justify-center
-              rounded-lg
-              text-[12px]
-              font-semibold
-
-              ${
-                selectedSchedules.length > 0
-                  ? "bg-[#FFF0F0] text-[#E5484D]"
-                  : "cursor-default bg-[#F5F5F5] text-[#BBBBBB]"
-              }
-            `}
+              border-t
+              border-[#EEEEEE]
+              px-[12px]
+              text-[13px]
+              text-[#E5484D]
+            "
           >
             전체 삭제
           </button>
         </div>
-      </div>
-    );
-  }
-
-  // ====================
-  // Normal Mode
-  // ====================
-
-  return (
-    <div className="mt-[10px] flex justify-end">
-      <button
-        type="button"
-        onClick={onEditStart}
-        aria-label="일정 편집"
-        className="
-          click-scale-sm
-          flex
-          h-[28px]
-          w-[28px]
-          items-center
-          justify-center
-          text-[#191919]
-        "
-      >
-        <MoreHorizontal size={20} strokeWidth={1.8} />
-      </button>
+      )}
     </div>
   );
 }

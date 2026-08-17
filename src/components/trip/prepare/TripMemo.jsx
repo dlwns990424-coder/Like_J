@@ -16,8 +16,6 @@ export default function TripMemo({ trip }) {
   return (
     <section>
       <div className="flex items-center gap-[6px]">
-        <ChevronDown size={20} strokeWidth={1.5} />
-
         <h2 className="text-[18px] font-semibold leading-[26px] tracking-[-0.01em]">
           메모
         </h2>

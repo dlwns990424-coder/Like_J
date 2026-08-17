@@ -1,23 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { LocateFixed } from "lucide-react";
-
-import {
-  AdvancedMarker,
-  Map as GoogleMap,
-  useMap,
-  useMapsLibrary,
-} from "@vis.gl/react-google-maps";
 
 import BottomNav from "../../components/common/BottomNav";
 
 import MapHeader from "../../components/map/MapHeader";
 import PlaceCard from "../../components/map/PlaceCard";
 import TripSelectModal from "../../components/map/TripSelectModal";
+import FavoriteAddSuccessModal from "../../components/map/FavoriteAddSuccessModal";
 
 import AccommodationPeriodModal from "../../components/trip/schedule/AccommodationPeriodModal";
+
+import {
+  getGooglePlaceById,
+  searchGooglePlaces,
+} from "../../api/googlePlaceApi";
 
 import {
   getCurrentUser,
@@ -34,19 +33,27 @@ const DEFAULT_CENTER = {
   lng: 126.978,
 };
 
-function MapContent() {
+export default function Map() {
   const navigate = useNavigate();
 
   const location = useLocation();
 
-  const map = useMap();
+  // ====================
+  // Google Map
+  // ====================
 
-  const places = useMapsLibrary("places");
+  const mapContainerRef = useRef(null);
 
-  const currentUser = getCurrentUser();
+  const mapRef = useRef(null);
+
+  const selectedMarkerRef = useRef(null);
+
+  const currentLocationMarkerRef = useRef(null);
+
+  const AdvancedMarkerElementRef = useRef(null);
 
   // ====================
-  // Context
+  // 진입 Mode
   // ====================
 
   const mode = location.state?.mode || null;
@@ -55,12 +62,52 @@ function MapContent() {
 
   const targetDate = location.state?.date || null;
 
+  // ====================
+  // User / Trip
+  // ====================
+
+  const currentUser = getCurrentUser();
+
   const targetTrip = targetTripId ? getTripById(targetTripId) : null;
 
   const trips = currentUser ? getTripsByUserId(currentUser.id) : [];
 
   // ====================
-  // State
+  // 오늘 날짜
+  // ====================
+
+  const getTodayDateString = () => {
+    const now = new Date();
+
+    const year = now.getFullYear();
+
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+
+    const day = String(now.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = getTodayDateString();
+
+  // ====================
+  // 관심 장소 추가 가능한 여행
+  //
+  // 현재 여행 O
+  // 미래 여행 O
+  // 과거 여행 X
+  // ====================
+
+  const availableTrips = trips.filter((trip) => {
+    if (!trip.endDate) {
+      return false;
+    }
+
+    return trip.endDate >= today;
+  });
+
+  // ====================
+  // Search
   // ====================
 
   const [isSearchMode, setIsSearchMode] = useState(false);
@@ -71,25 +118,168 @@ function MapContent() {
 
   const [selectedPlace, setSelectedPlace] = useState(null);
 
-  const [sessionToken, setSessionToken] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // ====================
+  // Current Location
+  // ====================
 
   const [currentPosition, setCurrentPosition] = useState(null);
 
   const [isLocating, setIsLocating] = useState(false);
 
+  // ====================
+  // Place Card Height
+  // ====================
+
   const [placeCardHeight, setPlaceCardHeight] = useState(0);
 
-  const [isTripSelectModalOpen, setIsTripSelectModalOpen] = useState(false);
+  // ====================
+  // Trip Select
+  // ====================
+
+  const [isTripSelectOpen, setIsTripSelectOpen] = useState(false);
+
+  // ====================
+  // Favorite Success
+  // ====================
+
+  const [isFavoriteSuccessOpen, setIsFavoriteSuccessOpen] = useState(false);
+
+  const [favoriteSuccessTripTitle, setFavoriteSuccessTripTitle] = useState("");
+
+  const [favoriteSuccessPlaceName, setFavoriteSuccessPlaceName] = useState("");
+
+  // ====================
+  // Accommodation
+  // ====================
 
   const [isAccommodationPeriodOpen, setIsAccommodationPeriodOpen] =
     useState(false);
+
+  // ====================
+  // Google Map Init
+  // ====================
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const initMap = async () => {
+      if (!mapContainerRef.current) {
+        return;
+      }
+
+      if (!window.google?.maps) {
+        console.error("Google Maps JavaScript API가 로드되지 않았습니다.");
+
+        return;
+      }
+
+      try {
+        const [{ Map: GoogleMap }, { AdvancedMarkerElement }] =
+          await Promise.all([
+            window.google.maps.importLibrary("maps"),
+
+            window.google.maps.importLibrary("marker"),
+          ]);
+
+        if (isCancelled || !mapContainerRef.current) {
+          return;
+        }
+
+        AdvancedMarkerElementRef.current = AdvancedMarkerElement;
+
+        // ====================
+        // Map
+        // ====================
+
+        const map = new GoogleMap(mapContainerRef.current, {
+          center: DEFAULT_CENTER,
+
+          zoom: 13,
+
+          mapId: "DEMO_MAP_ID",
+
+          disableDefaultUI: true,
+
+          gestureHandling: "greedy",
+
+          keyboardShortcuts: true,
+        });
+
+        mapRef.current = map;
+
+        // ====================
+        // Google POI Click
+        // ====================
+
+        map.addListener("click", async (event) => {
+          if (!event.placeId) {
+            return;
+          }
+
+          event.stop?.();
+
+          try {
+            const place = await getGooglePlaceById(event.placeId);
+
+            if (!place) {
+              return;
+            }
+
+            setSelectedPlace(place);
+
+            setKeyword(place.name);
+
+            setSearchResults([]);
+
+            showSelectedPlace(place);
+          } catch (error) {
+            console.error("지도 장소 선택 오류:", error);
+          }
+        });
+
+        // ====================
+        // 현재 위치
+        // ====================
+
+        moveToCurrentLocation();
+      } catch (error) {
+        console.error("Google Map 초기화 오류:", error);
+      }
+    };
+
+    initMap();
+
+    return () => {
+      isCancelled = true;
+
+      if (selectedMarkerRef.current) {
+        selectedMarkerRef.current.map = null;
+
+        selectedMarkerRef.current = null;
+      }
+
+      if (currentLocationMarkerRef.current) {
+        currentLocationMarkerRef.current.map = null;
+
+        currentLocationMarkerRef.current = null;
+      }
+
+      mapRef.current = null;
+    };
+  }, []);
 
   // ====================
   // Current Location
   // ====================
 
   const moveToCurrentLocation = () => {
-    if (!map) {
+    const map = mapRef.current;
+
+    const AdvancedMarkerElement = AdvancedMarkerElementRef.current;
+
+    if (!map || !AdvancedMarkerElement) {
       return;
     }
 
@@ -111,9 +301,33 @@ function MapContent() {
 
         setCurrentPosition(location);
 
+        // ====================
+        // Map Move
+        // ====================
+
         map.panTo(location);
 
         map.setZoom(15);
+
+        // ====================
+        // Current Marker
+        // ====================
+
+        if (currentLocationMarkerRef.current) {
+          currentLocationMarkerRef.current.position = location;
+
+          currentLocationMarkerRef.current.map = map;
+        } else {
+          const marker = new AdvancedMarkerElement({
+            map,
+
+            position: location,
+
+            title: "현재 위치",
+          });
+
+          currentLocationMarkerRef.current = marker;
+        }
 
         setIsLocating(false);
       },
@@ -134,16 +348,20 @@ function MapContent() {
     );
   };
 
-  useEffect(() => {
-    if (!map) {
-      return;
-    }
-
-    moveToCurrentLocation();
-  }, [map]);
+  // ====================
+  // Current Location Button
+  // ====================
 
   const handleCurrentLocation = () => {
     if (isLocating) {
+      return;
+    }
+
+    if (currentPosition && mapRef.current) {
+      mapRef.current.panTo(currentPosition);
+
+      mapRef.current.setZoom(15);
+
       return;
     }
 
@@ -151,7 +369,7 @@ function MapContent() {
   };
 
   // ====================
-  // Navigation
+  // Back
   // ====================
 
   const handleBack = () => {
@@ -159,58 +377,26 @@ function MapContent() {
   };
 
   // ====================
-  // Search
+  // Search Open
   // ====================
 
   const handleSearchOpen = () => {
     setIsSearchMode(true);
   };
 
-  const handleSearchChange = async (e) => {
-    const value = e.target.value;
+  // ====================
+  // Search Change
+  // ====================
 
-    setKeyword(value);
+  const handleSearchChange = (e) => {
+    setKeyword(e.target.value);
 
-    const searchKeyword = value.trim();
-
-    if (!searchKeyword) {
-      setSearchResults([]);
-
-      return;
-    }
-
-    if (!places) {
-      return;
-    }
-
-    try {
-      const token = sessionToken || new places.AutocompleteSessionToken();
-
-      if (!sessionToken) {
-        setSessionToken(token);
-      }
-
-      const { suggestions } =
-        await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
-          input: searchKeyword,
-
-          sessionToken: token,
-
-          language: "ko",
-        });
-
-      setSearchResults(
-        suggestions
-          .map((suggestion) => suggestion.placePrediction)
-          .filter(Boolean)
-          .slice(0, 5),
-      );
-    } catch (error) {
-      console.error("장소 자동완성 오류:", error);
-
-      setSearchResults([]);
-    }
+    setSearchResults([]);
   };
+
+  // ====================
+  // Search Close
+  // ====================
 
   const handleSearchClose = () => {
     setKeyword("");
@@ -219,187 +405,158 @@ function MapContent() {
 
     setSelectedPlace(null);
 
-    setSessionToken(null);
-
     setPlaceCardHeight(0);
 
     setIsSearchMode(false);
+
+    if (selectedMarkerRef.current) {
+      selectedMarkerRef.current.map = null;
+
+      selectedMarkerRef.current = null;
+    }
   };
+
+  // ====================
+  // Selected Place
+  // ====================
+
+  const showSelectedPlace = (place) => {
+    const map = mapRef.current;
+
+    const AdvancedMarkerElement = AdvancedMarkerElementRef.current;
+
+    if (!map || !AdvancedMarkerElement) {
+      return;
+    }
+
+    if (
+      place.lat == null ||
+      place.lng == null ||
+      Number.isNaN(place.lat) ||
+      Number.isNaN(place.lng)
+    ) {
+      return;
+    }
+
+    const position = {
+      lat: place.lat,
+
+      lng: place.lng,
+    };
+
+    // ====================
+    // Marker
+    // ====================
+
+    if (selectedMarkerRef.current) {
+      selectedMarkerRef.current.position = position;
+
+      selectedMarkerRef.current.map = map;
+    } else {
+      const marker = new AdvancedMarkerElement({
+        map,
+
+        position,
+
+        title: place.name,
+
+        gmpClickable: true,
+      });
+
+      marker.addListener("click", () => {
+        setSelectedPlace(place);
+      });
+
+      selectedMarkerRef.current = marker;
+    }
+
+    map.panTo(position);
+
+    map.setZoom(16);
+  };
+
+  // ====================
+  // Search Submit
+  // ====================
 
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
 
-    if (searchResults.length === 0) {
+    const searchKeyword = keyword.trim();
+
+    if (!searchKeyword || isSearching) {
       return;
     }
 
-    await handlePlaceSelect(searchResults[0]);
-  };
+    const map = mapRef.current;
 
-  // ====================
-  // Place Data
-  // ====================
-
-  const getPlacePhoto = (place) => {
-    const photo = place.photos?.[0];
-
-    if (!photo) {
-      return null;
+    if (!map) {
+      return;
     }
 
-    try {
-      return photo.getURI({
-        maxWidth: 500,
-        maxHeight: 500,
-      });
-    } catch {
-      return null;
-    }
-  };
-
-  const getOpeningHours = (place) => {
-    const openingHours = place.regularOpeningHours;
-
-    if (!openingHours) {
-      return "영업시간 정보 없음";
-    }
-
-    return openingHours.weekdayDescriptions?.[0] || "영업시간 정보 있음";
-  };
-
-  const createPlaceData = (place) => {
-    const country = place.addressComponents?.find((component) =>
-      component.types.includes("country"),
-    );
-
-    const locality = place.addressComponents?.find((component) =>
-      component.types.includes("locality"),
-    );
-
-    const admin = place.addressComponents?.find(
-      (component) =>
-        component.types.includes("administrative_area_level_1") ||
-        component.types.includes("administrative_area_level_2"),
-    );
-
-    return {
-      id: place.id,
-
-      name: place.displayName || "",
-
-      category: place.primaryTypeDisplayName || "장소",
-
-      address: place.formattedAddress || "",
-
-      country: country?.longText || "",
-
-      countryCode: country?.shortText || "",
-
-      city: locality?.longText || admin?.longText || "",
-
-      lat: place.location?.lat() ?? null,
-
-      lng: place.location?.lng() ?? null,
-
-      rating: place.rating ?? null,
-
-      openingHours: getOpeningHours(place),
-
-      url: place.websiteURI || "",
-
-      phone: place.nationalPhoneNumber || "",
-
-      imageUrl: getPlacePhoto(place),
-    };
-  };
-
-  const fetchPlaceDetails = async (place) => {
-    await place.fetchFields({
-      fields: [
-        "displayName",
-        "formattedAddress",
-        "location",
-        "addressComponents",
-        "primaryTypeDisplayName",
-        "rating",
-        "regularOpeningHours",
-        "websiteURI",
-        "nationalPhoneNumber",
-        "photos",
-      ],
-    });
-
-    return createPlaceData(place);
-  };
-
-  const showPlace = (placeData) => {
-    setSelectedPlace(placeData);
-
-    setKeyword(placeData.name);
+    setIsSearching(true);
 
     setSearchResults([]);
 
-    setSessionToken(null);
+    try {
+      const center = map.getCenter();
 
-    if (map && placeData.lat !== null && placeData.lng !== null) {
-      map.panTo({
-        lat: placeData.lat,
+      const results = await searchGooglePlaces(searchKeyword, {
+        lat: center?.lat(),
 
-        lng: placeData.lng,
+        lng: center?.lng(),
+
+        radius: 50000,
+
+        maxResultCount: 10,
       });
 
-      map.setZoom(16);
-    }
-  };
+      if (!results || results.length === 0) {
+        setSearchResults([]);
 
-  const handlePlaceSelect = async (prediction) => {
-    if (!places) {
-      return;
-    }
+        alert("검색 결과가 없습니다.");
 
-    try {
-      const place = prediction.toPlace();
+        return;
+      }
 
-      const data = await fetchPlaceDetails(place);
+      setSearchResults(results);
 
-      showPlace(data);
+      if (results.length === 1) {
+        const place = results[0];
+
+        setSelectedPlace(place);
+
+        setKeyword(place.name);
+
+        setSearchResults([]);
+
+        showSelectedPlace(place);
+      }
     } catch (error) {
-      console.error("장소 상세 오류:", error);
+      console.error("Google 장소 검색 오류:", error);
+
+      alert("장소 검색 중 오류가 발생했습니다.");
+    } finally {
+      setIsSearching(false);
     }
   };
 
   // ====================
-  // Map POI
+  // Search Result Select
   // ====================
 
-  const handleMapClick = async (event) => {
-    if (event.stoppable) {
-      event.stop();
-    }
+  const handlePlaceSelect = (place) => {
+    setSelectedPlace(place);
 
-    const placeId = event.detail?.placeId;
+    setKeyword(place.name);
 
-    if (!placeId || !places) {
-      return;
-    }
+    setSearchResults([]);
 
-    try {
-      const place = new places.Place({
-        id: placeId,
-
-        requestedLanguage: "ko",
-      });
-
-      const data = await fetchPlaceDetails(place);
-
-      showPlace(data);
-    } catch (error) {
-      console.error("지도 장소 오류:", error);
-    }
+    showSelectedPlace(place);
   };
 
   // ====================
-  // Favorite
+  // Favorite Place Data
   // ====================
 
   const createFavoritePlace = (tripId) => ({
@@ -428,17 +585,33 @@ function MapContent() {
     rating: selectedPlace.rating,
 
     imageUrl: selectedPlace.imageUrl,
+
+    url: selectedPlace.url,
+
+    phone: selectedPlace.phone,
+
+    openingHours: selectedPlace.openingHours || [],
+
+    openNow: selectedPlace.openNow ?? null,
   });
+
+  // ====================
+  // Favorite Add
+  // ====================
 
   const handleFavoriteAdd = () => {
     if (!selectedPlace) {
       return;
     }
 
+    // ====================
+    // 특정 여행에서 진입
+    // ====================
+
     if (mode === "favorite" && targetTripId) {
       const saved = saveFavoritePlace(createFavoritePlace(targetTripId));
 
-      if (!saved) {
+      if (saved === false) {
         alert("이미 관심 장소에 추가된 장소입니다.");
 
         return;
@@ -449,29 +622,65 @@ function MapContent() {
       return;
     }
 
-    setIsTripSelectModalOpen(true);
+    // ====================
+    // 일반 Map
+    // ====================
+
+    setIsTripSelectOpen(true);
   };
 
-  const handleTripSelect = (tripId) => {
-    const saved = saveFavoritePlace(createFavoritePlace(tripId));
+  // ====================
+  // Trip Select
+  // ====================
 
-    if (!saved) {
-      alert("이미 관심 장소에 추가된 장소입니다.");
+  const handleTripSelect = (tripId) => {
+    if (!selectedPlace) {
+      return;
+    }
+
+    const selectedTrip = availableTrips.find((trip) => trip.id === tripId);
+
+    if (!selectedTrip) {
+      alert("관심 장소를 추가할 수 없는 여행입니다.");
 
       return;
     }
 
-    setIsTripSelectModalOpen(false);
+    const saved = saveFavoritePlace(createFavoritePlace(tripId));
 
-    navigate(`/trip/${tripId}`);
+    if (saved === false) {
+      alert("이미 해당 여행의 관심 장소에 추가된 장소입니다.");
+
+      return;
+    }
+
+    setIsTripSelectOpen(false);
+
+    setFavoriteSuccessTripTitle(selectedTrip.title);
+
+    setFavoriteSuccessPlaceName(selectedPlace.name);
+
+    setIsFavoriteSuccessOpen(true);
   };
 
   // ====================
-  // Schedule
+  // Favorite Success Close
+  // ====================
+
+  const handleFavoriteSuccessClose = () => {
+    setIsFavoriteSuccessOpen(false);
+
+    setFavoriteSuccessTripTitle("");
+
+    setFavoriteSuccessPlaceName("");
+  };
+
+  // ====================
+  // Schedule Add
   // ====================
 
   const handleScheduleAdd = () => {
-    if (!selectedPlace || mode !== "schedule" || !targetTripId || !targetDate) {
+    if (!selectedPlace || !targetTripId || !targetDate) {
       return;
     }
 
@@ -515,6 +724,18 @@ function MapContent() {
 
       imageUrl: selectedPlace.imageUrl,
 
+      url: selectedPlace.url,
+
+      phone: selectedPlace.phone,
+
+      // ====================
+      // 추가
+      // ====================
+
+      openingHours: selectedPlace.openingHours || [],
+
+      openNow: selectedPlace.openNow ?? null,
+
       startTime: null,
 
       endTime: null,
@@ -534,21 +755,20 @@ function MapContent() {
   };
 
   // ====================
-  // Accommodation
+  // Accommodation Add
   // ====================
 
   const handleAccommodationAdd = () => {
-    if (
-      !selectedPlace ||
-      mode !== "accommodation" ||
-      !targetTripId ||
-      !targetTrip
-    ) {
+    if (!selectedPlace || !targetTripId || !targetTrip) {
       return;
     }
 
     setIsAccommodationPeriodOpen(true);
   };
+
+  // ====================
+  // Accommodation Save
+  // ====================
 
   const handleAccommodationSave = (period) => {
     if (!selectedPlace || !targetTripId) {
@@ -607,152 +827,144 @@ function MapContent() {
   };
 
   // ====================
-  // Trip Create
+  // Current Location Position
   // ====================
-
-  const handleCreateTrip = () => {
-    if (!selectedPlace) {
-      return;
-    }
-
-    navigate("/trip-create", {
-      state: {
-        destination: {
-          placeId: selectedPlace.id,
-
-          country: selectedPlace.country,
-
-          countryCode: selectedPlace.countryCode,
-
-          city: selectedPlace.city,
-
-          address: selectedPlace.address,
-
-          lat: selectedPlace.lat,
-
-          lng: selectedPlace.lng,
-        },
-
-        sourcePlace: selectedPlace,
-      },
-    });
-  };
 
   const currentLocationBottom = selectedPlace
     ? 100 + placeCardHeight + 12
     : 110;
 
-  return (
-    <>
-      <GoogleMap
-        mapId={import.meta.env.VITE_GOOGLE_MAP_ID}
-        defaultCenter={DEFAULT_CENTER}
-        defaultZoom={13}
-        gestureHandling="greedy"
-        disableDefaultUI
-        className="h-full w-full"
-        onClick={handleMapClick}
-      >
-        {currentPosition && (
-          <AdvancedMarker position={currentPosition}>
-            <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white">
-              <div className="h-[12px] w-[12px] rounded-full bg-[#3478F6]" />
-            </div>
-          </AdvancedMarker>
-        )}
+  // ====================
+  // Modal Open
+  // ====================
 
-        {selectedPlace &&
-          selectedPlace.lat !== null &&
-          selectedPlace.lng !== null && (
-            <AdvancedMarker
-              position={{
-                lat: selectedPlace.lat,
+  const isModalOpen =
+    isTripSelectOpen || isFavoriteSuccessOpen || isAccommodationPeriodOpen;
 
-                lng: selectedPlace.lng,
-              }}
-            />
-          )}
-      </GoogleMap>
+  // ====================
+  // Render
+  // ====================
 
-      <MapHeader
-        isSearchMode={isSearchMode}
-        keyword={keyword}
-        searchResults={searchResults}
-        onBack={handleBack}
-        onSearchOpen={handleSearchOpen}
-        onSearchChange={handleSearchChange}
-        onSearchClose={handleSearchClose}
-        onSearchSubmit={handleSearchSubmit}
-        onPlaceSelect={handlePlaceSelect}
-      />
-
-      <button
-        type="button"
-        onClick={handleCurrentLocation}
-        disabled={isLocating}
-        className="
-          click-scale-sm
-          absolute
-          left-5
-          z-30
-          flex
-          h-[44px]
-          w-[44px]
-          items-center
-          justify-center
-          rounded-full
-          border
-          border-[#D9D9D9]
-          bg-white
-        "
-        style={{
-          bottom: `${currentLocationBottom}px`,
-        }}
-      >
-        <LocateFixed size={22} strokeWidth={1.5} />
-      </button>
-
-      {selectedPlace && (
-        <PlaceCard
-          place={selectedPlace}
-          mode={mode}
-          onFavoriteAdd={handleFavoriteAdd}
-          onScheduleAdd={handleScheduleAdd}
-          onAccommodationAdd={handleAccommodationAdd}
-          onCreateTrip={handleCreateTrip}
-          onHeightChange={setPlaceCardHeight}
-        />
-      )}
-
-      <BottomNav />
-
-      <TripSelectModal
-        isOpen={isTripSelectModalOpen}
-        trips={trips}
-        onClose={() => setIsTripSelectModalOpen(false)}
-        onSelect={handleTripSelect}
-        onCreateTrip={handleCreateTrip}
-      />
-
-      {targetTrip && (
-        <AccommodationPeriodModal
-          isOpen={isAccommodationPeriodOpen}
-          place={selectedPlace}
-          trip={targetTrip}
-          initialDate={targetDate}
-          onClose={() => setIsAccommodationPeriodOpen(false)}
-          onSave={handleAccommodationSave}
-        />
-      )}
-    </>
-  );
-}
-
-export default function Map() {
   return (
     <main className="relative h-dvh overflow-hidden bg-white text-[#191919]">
       <div className="relative mx-auto h-dvh w-full max-w-[390px] overflow-hidden">
-        <MapContent />
+        {/* ====================
+            Google Map
+        ==================== */}
+
+        <div
+          ref={mapContainerRef}
+          className="
+            absolute
+            inset-0
+            h-full
+            w-full
+          "
+        />
+
+        {/* ====================
+            Header
+        ==================== */}
+
+        <MapHeader
+          isSearchMode={isSearchMode}
+          keyword={keyword}
+          searchResults={searchResults}
+          onBack={handleBack}
+          onSearchOpen={handleSearchOpen}
+          onSearchChange={handleSearchChange}
+          onSearchClose={handleSearchClose}
+          onSearchSubmit={handleSearchSubmit}
+          onPlaceSelect={handlePlaceSelect}
+        />
+
+        {/* ====================
+            Current Location
+        ==================== */}
+
+        <button
+          type="button"
+          onClick={handleCurrentLocation}
+          disabled={isLocating}
+          className="
+            click-scale-sm
+            absolute
+            left-5
+            z-30
+            flex
+            h-[44px]
+            w-[44px]
+            items-center
+            justify-center
+            rounded-full
+            border
+            border-[#D9D9D9]
+            bg-white
+          "
+          style={{
+            bottom: `${currentLocationBottom}px`,
+          }}
+        >
+          <LocateFixed size={22} strokeWidth={1.5} />
+        </button>
+
+        {/* ====================
+            Place Card
+        ==================== */}
+
+        {selectedPlace && (
+          <PlaceCard
+            place={selectedPlace}
+            mode={mode}
+            onFavoriteAdd={handleFavoriteAdd}
+            onScheduleAdd={handleScheduleAdd}
+            onAccommodationAdd={handleAccommodationAdd}
+            onHeightChange={setPlaceCardHeight}
+          />
+        )}
+
+        {/* ====================
+            Bottom Navigation
+        ==================== */}
+
+        {!isModalOpen && <BottomNav />}
+
+        {/* ====================
+            Trip Select
+        ==================== */}
+
+        <TripSelectModal
+          isOpen={isTripSelectOpen}
+          trips={availableTrips}
+          onClose={() => setIsTripSelectOpen(false)}
+          onSelect={handleTripSelect}
+        />
+
+        {/* ====================
+            Favorite Success
+        ==================== */}
+
+        <FavoriteAddSuccessModal
+          isOpen={isFavoriteSuccessOpen}
+          tripTitle={favoriteSuccessTripTitle}
+          placeName={favoriteSuccessPlaceName}
+          onClose={handleFavoriteSuccessClose}
+        />
+
+        {/* ====================
+            Accommodation
+        ==================== */}
+
+        {targetTrip && (
+          <AccommodationPeriodModal
+            isOpen={isAccommodationPeriodOpen}
+            place={selectedPlace}
+            trip={targetTrip}
+            initialDate={targetDate}
+            onClose={() => setIsAccommodationPeriodOpen(false)}
+            onSave={handleAccommodationSave}
+          />
+        )}
       </div>
     </main>
   );
