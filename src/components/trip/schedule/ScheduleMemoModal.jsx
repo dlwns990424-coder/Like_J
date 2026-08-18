@@ -151,13 +151,7 @@ export default function ScheduleMemoModal({
         ==================== */}
 
         <div className="flex items-center justify-between">
-          <h2
-            id="schedule-memo-title"
-            className="text-[20px] font-semibold leading-[28px] tracking-[-0.02em]"
-          >
-            하루 메모
-          </h2>
-
+          <div></div>
           <button
             type="button"
             onClick={onClose}
@@ -185,7 +179,7 @@ export default function ScheduleMemoModal({
             value={memo}
             onChange={handleChange}
             maxLength={MAX_LENGTH}
-            placeholder="오늘 일정에 대한 메모를 작성해보세요."
+            placeholder="간단한 메모를 작성해보세요."
             className="
               h-[160px]
               w-full

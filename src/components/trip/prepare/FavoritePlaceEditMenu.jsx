@@ -2,10 +2,10 @@ import { MoreHorizontal } from "lucide-react";
 
 import { useState } from "react";
 
-export default function ScheduleEditMenu({
+export default function FavoritePlaceEditMenu({
   isEditMode,
-  selectedSchedules,
-  selectedScheduleIds,
+  favoritePlaces,
+  selectedPlaceIds,
   onEditStart,
   onEditComplete,
   onSelectAll,
@@ -14,12 +14,16 @@ export default function ScheduleEditMenu({
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
+  // ====================
+  // Edit Mode
+  // ====================
+
   if (isEditMode) {
     return (
       <>
-        <div className="mt-[14px] flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <p className="text-[13px] text-[#555555]">
-            삭제할 일정을 선택해주세요.
+            삭제할 관심 장소를 선택해주세요.
           </p>
 
           <button
@@ -27,8 +31,8 @@ export default function ScheduleEditMenu({
             onClick={onSelectAll}
             className="click-scale-sm text-[13px] font-medium text-[#3478F6]"
           >
-            {selectedSchedules.length > 0 &&
-            selectedScheduleIds.length === selectedSchedules.length
+            {favoritePlaces.length > 0 &&
+            selectedPlaceIds.length === favoritePlaces.length
               ? "전체 해제"
               : "전체 선택"}
           </button>
@@ -37,7 +41,7 @@ export default function ScheduleEditMenu({
         <div className="mt-[20px] flex gap-[10px]">
           <button
             type="button"
-            disabled={selectedScheduleIds.length === 0}
+            disabled={selectedPlaceIds.length === 0}
             onClick={onSelectedDelete}
             className={`
               flex
@@ -48,16 +52,17 @@ export default function ScheduleEditMenu({
               rounded-xl
               border
               text-[14px]
+              font-semibold
 
               ${
-                selectedScheduleIds.length > 0
+                selectedPlaceIds.length > 0
                   ? "click-scale border-[#E5484D] text-[#E5484D]"
                   : "border-[#D9D9D9] text-[#BBBBBB]"
               }
             `}
           >
             선택 삭제
-            {selectedScheduleIds.length > 0 && ` ${selectedScheduleIds.length}`}
+            {selectedPlaceIds.length > 0 && ` ${selectedPlaceIds.length}`}
           </button>
 
           <button
@@ -73,6 +78,7 @@ export default function ScheduleEditMenu({
               rounded-xl
               bg-[#3478F6]
               text-[14px]
+              font-semibold
               text-white
             "
           >
@@ -83,28 +89,32 @@ export default function ScheduleEditMenu({
     );
   }
 
+  // ====================
+  // Normal Mode
+  // ====================
+
   return (
-    <div className="relative mt-[8px] flex justify-end">
+    <div className="relative">
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className="
           click-scale-sm
           flex
-          h-[38px]
-          w-[38px]
+          h-[32px]
+          w-[32px]
           items-center
           justify-center
         "
       >
-        <MoreHorizontal size={20} strokeWidth={1.5} />
+        <MoreHorizontal size={22} strokeWidth={1.5} />
       </button>
 
       {isOpen && (
         <div
           className="
             absolute
-            top-[44px]
+            top-[38px]
             right-0
             z-50
             w-[150px]
@@ -132,7 +142,7 @@ export default function ScheduleEditMenu({
               text-[13px]
             "
           >
-            일정 편집
+            관심 장소 편집
           </button>
 
           <button

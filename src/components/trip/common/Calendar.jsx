@@ -9,6 +9,7 @@ export default function Calendar({
   setEndDate,
 }) {
   const year = currentMonth.getFullYear();
+
   const month = currentMonth.getMonth();
 
   const firstDay = new Date(year, month, 1).getDay();
@@ -16,6 +17,12 @@ export default function Calendar({
   const lastDate = new Date(year, month + 1, 0).getDate();
 
   const calendarDays = [];
+
+  const today = new Date();
+
+  // ====================
+  // Calendar Days
+  // ====================
 
   for (let i = 0; i < firstDay; i++) {
     calendarDays.push(null);
@@ -25,12 +32,18 @@ export default function Calendar({
     calendarDays.push(new Date(year, month, day));
   }
 
+  // ====================
+  // Date Utils
+  // ====================
+
   const normalizeDate = (date) => {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   };
 
   const isSameDate = (dateA, dateB) => {
-    if (!dateA || !dateB) return false;
+    if (!dateA || !dateB) {
+      return false;
+    }
 
     return (
       dateA.getFullYear() === dateB.getFullYear() &&
@@ -45,11 +58,17 @@ export default function Calendar({
     }
 
     const target = normalizeDate(date);
+
     const start = normalizeDate(startDate);
+
     const end = normalizeDate(endDate);
 
     return target >= start && target <= end;
   };
+
+  // ====================
+  // Date Select
+  // ====================
 
   const handleDateSelect = (date) => {
     /*
@@ -58,9 +77,12 @@ export default function Calendar({
 
       → 새 시작일 선택
     */
+
     if (!startDate || (startDate && endDate)) {
       setStartDate(date);
+
       setEndDate(null);
+
       return;
     }
 
@@ -70,9 +92,12 @@ export default function Calendar({
 
       → 해당 날짜를 새로운 시작일로 변경
     */
+
     if (date < startDate) {
       setStartDate(date);
+
       setEndDate(null);
+
       return;
     }
 
@@ -81,8 +106,13 @@ export default function Calendar({
 
       → 종료일 설정
     */
+
     setEndDate(date);
   };
+
+  // ====================
+  // Month
+  // ====================
 
   const handlePrevMonth = () => {
     setCurrentMonth(new Date(year, month - 1, 1));
@@ -92,8 +122,14 @@ export default function Calendar({
     setCurrentMonth(new Date(year, month + 1, 1));
   };
 
+  // ====================
+  // Format
+  // ====================
+
   const formatDate = (date) => {
-    if (!date) return "";
+    if (!date) {
+      return "";
+    }
 
     const y = date.getFullYear();
 
@@ -114,19 +150,40 @@ export default function Calendar({
         <button
           type="button"
           onClick={handlePrevMonth}
-          className="click-scale-sm flex h-[40px] w-[40px] items-center justify-center"
+          className="
+            click-scale-sm
+            flex
+            h-[40px]
+            w-[40px]
+            items-center
+            justify-center
+          "
         >
           <ChevronLeft size={22} strokeWidth={1.5} />
         </button>
 
-        <h2 className="text-[20px] font-semibold leading-[28px] tracking-[-0.02em]">
+        <h2
+          className="
+            text-[20px]
+            font-semibold
+            leading-[28px]
+            tracking-[-0.02em]
+          "
+        >
           {year}년 {month + 1}월
         </h2>
 
         <button
           type="button"
           onClick={handleNextMonth}
-          className="click-scale-sm flex h-[40px] w-[40px] items-center justify-center"
+          className="
+            click-scale-sm
+            flex
+            h-[40px]
+            w-[40px]
+            items-center
+            justify-center
+          "
         >
           <ChevronRight size={22} strokeWidth={1.5} />
         </button>
@@ -136,7 +193,17 @@ export default function Calendar({
           Week
       ========================= */}
 
-      <div className="mt-[16px] grid grid-cols-7 text-center text-[12px] leading-[18px] text-[#888888]">
+      <div
+        className="
+          mt-[16px]
+          grid
+          grid-cols-7
+          text-center
+          text-[12px]
+          leading-[18px]
+          text-[#888888]
+        "
+      >
         <span>일</span>
         <span>월</span>
         <span>화</span>
@@ -161,6 +228,8 @@ export default function Calendar({
           const isEnd = isSameDate(date, endDate);
 
           const inRange = isInRange(date);
+
+          const isToday = isSameDate(date, today);
 
           return (
             <button
@@ -200,6 +269,24 @@ export default function Calendar({
                 `}
               >
                 {date.getDate()}
+
+                {/* ====================
+                    Today
+                ==================== */}
+
+                {isToday && (
+                  <span
+                    className={`
+                      absolute
+                      bottom-[3px]
+                      h-[4px]
+                      w-[4px]
+                      rounded-full
+
+                      ${isStart || isEnd ? "bg-white" : "bg-[#3478F6]"}
+                    `}
+                  />
+                )}
               </span>
             </button>
           );

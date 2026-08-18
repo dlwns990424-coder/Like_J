@@ -26,7 +26,27 @@ const getAddressComponent = (addressComponents = [], type) => {
 };
 
 // ====================
+// Category
+// ====================
+
+const normalizeCategory = (category) => {
+  if (!category) {
+    return "장소";
+  }
+
+  const categoryMap = {
+    치과의사: "치과",
+    dentist: "치과",
+    Dentist: "치과",
+  };
+
+  return categoryMap[category] || category;
+};
+
+// ====================
 // Photo
+//
+// 여행 대표 이미지에서만 사용
 // ====================
 
 const getPhotoData = (photos, options = {}) => {
@@ -58,15 +78,13 @@ const getPhotoData = (photos, options = {}) => {
 
 // ====================
 // Map Place Normalize
+//
+// 장소 이미지 없음
+// 실제 업체 Website만 사용
 // ====================
 
 const normalizeGooglePlace = (place) => {
   const location = place.location;
-
-  const photoData = getPhotoData(place.photos, {
-    maxWidth: 800,
-    maxHeight: 600,
-  });
 
   const countryComponent = getAddressComponent(
     place.addressComponents,
@@ -78,6 +96,8 @@ const normalizeGooglePlace = (place) => {
     getAddressComponent(place.addressComponents, "postal_town") ||
     getAddressComponent(place.addressComponents, "administrative_area_level_1");
 
+  const category = place.primaryTypeDisplayName || place.primaryType || "장소";
+
   return {
     id: place.id || "",
 
@@ -85,7 +105,7 @@ const normalizeGooglePlace = (place) => {
 
     name: place.displayName || "",
 
-    category: place.primaryTypeDisplayName || place.primaryType || "장소",
+    category: normalizeCategory(category),
 
     address: place.formattedAddress || "",
 
@@ -98,22 +118,21 @@ const normalizeGooglePlace = (place) => {
     rating: place.rating ?? null,
 
     // ====================
-    // 영업시간
+    // Opening Hours
     // ====================
 
     openingHours: place.regularOpeningHours?.weekdayDescriptions || [],
 
     openNow: place.regularOpeningHours?.openNow ?? null,
 
-    url: place.googleMapsURI || place.websiteURI || "",
+    // ====================
+    // 실제 업체 Website
+    // Google Maps URI 사용 X
+    // ====================
+
+    url: place.websiteURI || "",
 
     phone: place.nationalPhoneNumber || "",
-
-    imageUrl: photoData.imageUrl,
-
-    imageAuthorName: photoData.imageAuthorName,
-
-    imageAuthorUrl: photoData.imageAuthorUrl,
 
     country: countryComponent?.longText || "",
 
@@ -125,6 +144,8 @@ const normalizeGooglePlace = (place) => {
 
 // ====================
 // Map 장소 검색
+//
+// 검색 submit 시에만 호출
 // ====================
 
 export const searchGooglePlaces = async (keyword, options = {}) => {
@@ -150,10 +171,8 @@ export const searchGooglePlaces = async (keyword, options = {}) => {
         "primaryTypeDisplayName",
         "rating",
         "regularOpeningHours",
-        "googleMapsURI",
         "websiteURI",
         "nationalPhoneNumber",
-        "photos",
       ],
 
       maxResultCount: options.maxResultCount || 10,
@@ -162,7 +181,7 @@ export const searchGooglePlaces = async (keyword, options = {}) => {
     };
 
     // ====================
-    // Map 중심 근처 우선
+    // 현재 Map 중심 근처 우선
     // ====================
 
     if (options.lat != null && options.lng != null) {
@@ -194,7 +213,9 @@ export const searchGooglePlaces = async (keyword, options = {}) => {
 // ====================
 // Place ID 상세 조회
 //
-// Google 지도 기본 POI 클릭 시 사용
+// Map 기본 POI 클릭 시 사용
+//
+// 사진 요청 X
 // ====================
 
 export const getGooglePlaceById = async (placeId) => {
@@ -220,10 +241,8 @@ export const getGooglePlaceById = async (placeId) => {
         "primaryTypeDisplayName",
         "rating",
         "regularOpeningHours",
-        "googleMapsURI",
         "websiteURI",
         "nationalPhoneNumber",
-        "photos",
       ],
     });
 
@@ -344,7 +363,7 @@ const normalizeGoogleDestination = (place) => {
 };
 
 // ====================
-// 중복 제거
+// Destination 중복 제거
 // ====================
 
 const removeDuplicateDestinations = (destinations) => {
@@ -410,7 +429,9 @@ export const searchGoogleDestinations = async (keyword) => {
 };
 
 // ====================
-// Place ID 대표 이미지
+// 여행 대표 이미지
+//
+// 여기에서만 Photo API 데이터 사용
 // ====================
 
 const getGooglePlaceImageById = async (placeId) => {
@@ -451,10 +472,16 @@ const getGooglePlaceImageById = async (placeId) => {
 
 // ====================
 // 여행 대표 이미지
+//
+// 여행 생성 시에만 호출
 // ====================
 
 export const getGooglePlaceImage = async ({ placeId, name, country }) => {
   try {
+    // ====================
+    // Place ID 우선
+    // ====================
+
     if (placeId) {
       const result = await getGooglePlaceImageById(placeId);
 
@@ -462,6 +489,10 @@ export const getGooglePlaceImage = async ({ placeId, name, country }) => {
         return result;
       }
     }
+
+    // ====================
+    // Fallback
+    // ====================
 
     if (!name) {
       return null;

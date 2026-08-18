@@ -18,11 +18,67 @@ export default function SignUp() {
 
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
 
+  // ====================
+  // Nickname Length
+  // ====================
+
+  const getNicknameLength = (value) => {
+    return [...value].reduce((length, char) => {
+      if (/[가-힣]/.test(char)) {
+        return length + 2;
+      }
+
+      return length + 1;
+    }, 0);
+  };
+
+  // ====================
+  // Nickname Change
+  // ====================
+
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+
+    // 한글, 영문, 숫자만 허용
+    const nicknameRegex = /^[가-힣A-Za-z0-9]*$/;
+
+    if (!nicknameRegex.test(value)) {
+      return;
+    }
+
+    // 한글 1자 = 2
+    // 영문/숫자 1자 = 1
+    // 최대 16
+    if (getNicknameLength(value) > 16) {
+      return;
+    }
+
+    setName(value);
+  };
+
+  // ====================
+  // Submit
+  // ====================
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!name.trim()) {
-      alert("이름을 입력해주세요.");
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      alert("닉네임을 입력해주세요.");
+      return;
+    }
+
+    const nicknameRegex = /^[가-힣A-Za-z0-9]+$/;
+
+    if (!nicknameRegex.test(trimmedName)) {
+      alert("닉네임은 한글, 영문, 숫자만 사용할 수 있습니다.");
+      return;
+    }
+
+    if (getNicknameLength(trimmedName) > 16) {
+      alert("닉네임은 한글 8자 또는 영문 16자 이내로 입력해주세요.");
       return;
     }
 
@@ -53,7 +109,7 @@ export default function SignUp() {
     const user = {
       id: crypto.randomUUID(),
 
-      name: name.trim(),
+      name: trimmedName,
 
       email: email.trim(),
 
@@ -64,6 +120,10 @@ export default function SignUp() {
 
     setIsCompleteModalOpen(true);
   };
+
+  // ====================
+  // Complete
+  // ====================
 
   const handleCompleteConfirm = () => {
     setIsCompleteModalOpen(false);
@@ -91,23 +151,35 @@ export default function SignUp() {
               onSubmit={handleSubmit}
               className="mt-[40px] flex flex-col gap-[16px]"
             >
+              {/* ====================
+                  Nickname
+              ==================== */}
+
               <div>
                 <label
                   htmlFor="name"
                   className="mb-[8px] block text-[14px] leading-[20px] tracking-[-0.01em]"
                 >
-                  이름
+                  닉네임
                 </label>
 
                 <input
                   id="name"
                   type="text"
-                  placeholder="이름을 입력해주세요."
+                  placeholder="닉네임을 입력해주세요."
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={handleNameChange}
                   className="h-[52px] w-full rounded-xl border border-transparent bg-[#F5F5F5] px-[10px] text-[16px] leading-[24px] tracking-[-0.01em] outline-none placeholder:text-[#888888] focus:border-[#888888]"
                 />
+
+                <p className="mt-[6px] text-[12px] leading-[18px] text-[#888888]">
+                  한글 8자 / 영문 16자 이내, 특수문자 사용 불가
+                </p>
               </div>
+
+              {/* ====================
+                  Email
+              ==================== */}
 
               <div>
                 <label
@@ -127,6 +199,10 @@ export default function SignUp() {
                 />
               </div>
 
+              {/* ====================
+                  Password
+              ==================== */}
+
               <div>
                 <label
                   htmlFor="password"
@@ -145,6 +221,10 @@ export default function SignUp() {
                 />
               </div>
 
+              {/* ====================
+                  Password Confirm
+              ==================== */}
+
               <div>
                 <label
                   htmlFor="passwordConfirm"
@@ -162,6 +242,10 @@ export default function SignUp() {
                   className="h-[52px] w-full rounded-xl border border-transparent bg-[#F5F5F5] px-[10px] text-[16px] leading-[24px] tracking-[-0.01em] outline-none placeholder:text-[#888888] focus:border-[#888888]"
                 />
               </div>
+
+              {/* ====================
+                  Sign Up Button
+              ==================== */}
 
               <button
                 type="submit"

@@ -6,6 +6,7 @@ export default function ScheduleTimeline({
   selectedScheduleIds,
   onSelectSchedule,
   onTimeSave,
+  onMemoSave,
 }) {
   if (schedules.length === 0) {
     return null;
@@ -19,33 +20,33 @@ export default function ScheduleTimeline({
             {index < schedules.length - 1 && (
               <div
                 className="
-                    absolute
-                    top-[18px]
-                    bottom-[-18px]
-                    left-1/2
-                    w-px
-                    -translate-x-1/2
-                    bg-[#D9D9D9]
-                  "
+                  absolute
+                  top-[18px]
+                  bottom-[-18px]
+                  left-1/2
+                  w-px
+                  -translate-x-1/2
+                  bg-[#D9D9D9]
+                "
               />
             )}
 
             <div
               className="
-                  relative
-                  z-10
-                  mt-[18px]
-                  flex
-                  h-[16px]
-                  w-[16px]
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-[#3478F6]
-                  text-[9px]
-                  font-semibold
-                  text-white
-                "
+                relative
+                z-10
+                mt-[18px]
+                flex
+                h-[16px]
+                w-[16px]
+                items-center
+                justify-center
+                rounded-full
+                bg-[#3478F6]
+                text-[9px]
+                font-semibold
+                text-white
+              "
             >
               {index + 1}
             </div>
@@ -55,6 +56,7 @@ export default function ScheduleTimeline({
             <SchedulePlaceCard
               schedule={schedule}
               onTimeSave={onTimeSave}
+              onMemoSave={onMemoSave}
               isEditMode={isEditMode}
               isSelected={selectedScheduleIds.includes(schedule.id)}
               onSelect={() => onSelectSchedule(schedule.id)}

@@ -11,6 +11,7 @@ import ScheduleMemoModal from "./ScheduleMemoModal";
 import ScheduleSortMenu from "./ScheduleSortMenu";
 import ScheduleEditMenu from "./ScheduleEditMenu";
 import ScheduleTimeline from "./ScheduleTimeline";
+import ScheduleEmptyGuide from "./ScheduleEmptyGuide";
 
 import AccommodationSelectModal from "./AccommodationSelectModal";
 import AccommodationPeriodModal from "./AccommodationPeriodModal";
@@ -143,6 +144,8 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
 
   // ====================
   // Memo
+  //
+  // 날짜 전체 메모
   // ====================
 
   const [memo, setMemo] = useState("");
@@ -273,9 +276,6 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
 
   // ====================
   // Date Select
-  //
-  // 애니메이션 없음
-  // 즉시 날짜 변경
   // ====================
 
   const handleDateSelect = (date) => {
@@ -295,7 +295,7 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
   };
 
   // ====================
-  // Memo
+  // Date Memo
   // ====================
 
   const handleMemoOpen = () => {
@@ -336,6 +336,18 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
     setMemo("");
 
     setIsMemoOpen(false);
+  };
+
+  // ====================
+  // Schedule Card Memo
+  // ====================
+
+  const handleScheduleMemoSave = (scheduleId, content) => {
+    updateSchedule(scheduleId, {
+      memo: content,
+    });
+
+    refreshSchedules();
   };
 
   // ====================
@@ -586,10 +598,6 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
     refreshSchedules();
   };
 
-  // ====================
-  // Render
-  // ====================
-
   return (
     <div
       ref={containerRef}
@@ -626,46 +634,105 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
         />
 
         {/* ====================
-            Memo
+            Date Memo
         ==================== */}
 
         <ScheduleMemo memo={memo} onClick={handleMemoOpen} />
 
         {/* ====================
-            Controls
-
-            ...
-            정렬 기준
+            Schedule Controls
         ==================== */}
 
-        <div className="mt-[6px]">
-          {/* ====================
-              Edit
-              ... 위
-          ==================== */}
+        {selectedSchedules.length === 0 && !isEditMode ? (
+          /* ====================
+              Empty Guide
+          ==================== */
 
-          <ScheduleEditMenu
-            isEditMode={isEditMode}
-            selectedSchedules={selectedSchedules}
-            selectedScheduleIds={selectedScheduleIds}
-            onEditStart={handleEditStart}
-            onEditComplete={handleEditComplete}
-            onSelectAll={handleSelectAll}
-            onSelectedDelete={handleSelectedDelete}
-            onDeleteAll={handleDeleteAll}
-          />
+          <div className="mt-[12px]">
+            <ScheduleEmptyGuide onAddPlace={handlePlaceAdd} />
+          </div>
+        ) : (
+          /* ====================
+              Place Add + Edit + Sort
+          ==================== */
 
-          {/* ====================
-              Sort
-              ... 아래
-          ==================== */}
+          <div className="mt-[12px]">
+            {isEditMode ? (
+              <ScheduleEditMenu
+                isEditMode={isEditMode}
+                selectedSchedules={selectedSchedules}
+                selectedScheduleIds={selectedScheduleIds}
+                onEditStart={handleEditStart}
+                onEditComplete={handleEditComplete}
+                onSelectAll={handleSelectAll}
+                onSelectedDelete={handleSelectedDelete}
+                onDeleteAll={handleDeleteAll}
+              />
+            ) : (
+              <div className="flex items-start justify-between gap-[12px]">
+                {/* ====================
+                    Add Place
+                ==================== */}
 
-          {!isEditMode && (
-            <div className="mt-[2px]">
-              <ScheduleSortMenu sortType={sortType} onChange={setSortType} />
-            </div>
-          )}
-        </div>
+                <button
+                  type="button"
+                  onClick={handlePlaceAdd}
+                  className="
+                    click-scale
+                    flex
+                    h-[44px]
+                    w-[240px]
+                    items-center
+                    justify-between
+                    rounded-xl
+                    bg-[#F5F5F5]
+                    px-[16px]
+                    text-[#555555]
+                  "
+                >
+                  <div className="flex items-center gap-[8px]">
+                    <MapPin size={18} strokeWidth={1.5} />
+
+                    <span
+                      className="
+                        text-[14px]
+                        font-medium
+                        leading-[20px]
+                      "
+                    >
+                      장소 추가
+                    </span>
+                  </div>
+
+                  <Plus size={17} strokeWidth={1.5} />
+                </button>
+                {/* ====================
+                    Edit + Sort
+                ==================== */}
+
+                <div className="ml-auto">
+                  <ScheduleEditMenu
+                    isEditMode={false}
+                    selectedSchedules={selectedSchedules}
+                    selectedScheduleIds={selectedScheduleIds}
+                    onEditStart={handleEditStart}
+                    onEditComplete={handleEditComplete}
+                    onSelectAll={handleSelectAll}
+                    onSelectedDelete={handleSelectedDelete}
+                    onDeleteAll={handleDeleteAll}
+                  />
+
+                  <div className="mt-[2px]">
+                    <ScheduleSortMenu
+                      sortType={sortType}
+                      onChange={setSortType}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ====================
             Timeline
@@ -677,39 +744,8 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
           selectedScheduleIds={selectedScheduleIds}
           onSelectSchedule={handleScheduleSelect}
           onTimeSave={handleTimeSave}
+          onMemoSave={handleScheduleMemoSave}
         />
-
-        {/* ====================
-            Add Place
-        ==================== */}
-
-        {!isEditMode && (
-          <button
-            type="button"
-            onClick={handlePlaceAdd}
-            className="
-              click-scale
-              mt-[8px]
-              flex
-              h-[42px]
-              w-full
-              items-center
-              gap-[10px]
-              rounded-xl
-              bg-[#F5F5F5]
-              px-[12px]
-              text-[14px]
-              leading-[20px]
-              text-[#888888]
-            "
-          >
-            <MapPin size={17} strokeWidth={1.5} />
-
-            <span>장소 추가</span>
-
-            <Plus size={16} strokeWidth={1.5} className="ml-auto" />
-          </button>
-        )}
       </section>
 
       {/* ====================
@@ -742,7 +778,7 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
       />
 
       {/* ====================
-          Memo Modal
+          Date Memo Modal
       ==================== */}
 
       <ScheduleMemoModal

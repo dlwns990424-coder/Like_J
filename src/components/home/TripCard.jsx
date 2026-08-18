@@ -1,22 +1,37 @@
-import { CalendarDays, MapPin } from "lucide-react";
+import { CalendarDays, Check, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export default function TripCard({ trip }) {
-  return (
-    <Link
-      to={`/trip/${trip.id}`}
-      className="
-        click-scale
-        flex
-        h-[120px]
-        w-full
-        overflow-hidden
-        rounded-xl
-        border
-        border-[#D9D9D9]
-        bg-white
-      "
-    >
+export default function TripCard({
+  trip,
+  isEditMode = false,
+  isSelected = false,
+  onSelect,
+}) {
+  // ====================
+  // Card Class
+  // ====================
+
+  const cardClassName = `
+    relative
+    flex
+    h-[120px]
+    w-full
+    overflow-hidden
+    rounded-xl
+    border
+    bg-white
+
+    ${isEditMode && isSelected ? "border-[#3478F6]" : "border-[#D9D9D9]"}
+
+    ${isEditMode ? "" : "click-scale"}
+  `;
+
+  // ====================
+  // Card Content
+  // ====================
+
+  const cardContent = (
+    <>
       {/* ====================
           여행 대표 이미지
       ==================== */}
@@ -74,6 +89,7 @@ export default function TripCard({ trip }) {
         <h2
           className="
             truncate
+            pr-[28px]
             text-[16px]
             font-semibold
             leading-[24px]
@@ -123,6 +139,61 @@ export default function TripCard({ trip }) {
           </span>
         </div>
       </div>
+
+      {/* ====================
+          편집 모드 체크
+      ==================== */}
+
+      {isEditMode && (
+        <div
+          className={`
+            absolute
+            top-[10px]
+            right-[10px]
+            flex
+            h-[24px]
+            w-[24px]
+            items-center
+            justify-center
+            rounded-full
+            border
+
+            ${
+              isSelected
+                ? "border-[#3478F6] bg-[#3478F6] text-white"
+                : "border-[#D9D9D9] bg-white"
+            }
+          `}
+        >
+          {isSelected && <Check size={16} strokeWidth={2} />}
+        </div>
+      )}
+    </>
+  );
+
+  // ====================
+  // Edit Mode
+  // ====================
+
+  if (isEditMode) {
+    return (
+      <button
+        type="button"
+        onClick={() => onSelect?.(trip.id)}
+        className={cardClassName}
+      >
+        {cardContent}
+      </button>
+    );
+  }
+
+  // ====================
+  // Normal Mode
+  // ====================
+
+  return (
+    <Link to={`/trip/${trip.id}`} className={cardClassName}>
+      {cardContent}
     </Link>
   );
 }

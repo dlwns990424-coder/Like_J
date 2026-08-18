@@ -73,7 +73,7 @@ export default function Map() {
   const trips = currentUser ? getTripsByUserId(currentUser.id) : [];
 
   // ====================
-  // 오늘 날짜
+  // Today
   // ====================
 
   const getTodayDateString = () => {
@@ -91,11 +91,7 @@ export default function Map() {
   const today = getTodayDateString();
 
   // ====================
-  // 관심 장소 추가 가능한 여행
-  //
-  // 현재 여행 O
-  // 미래 여행 O
-  // 과거 여행 X
+  // 관심장소 추가 가능 여행
   // ====================
 
   const availableTrips = trips.filter((trip) => {
@@ -129,7 +125,7 @@ export default function Map() {
   const [isLocating, setIsLocating] = useState(false);
 
   // ====================
-  // Place Card Height
+  // Card Height
   // ====================
 
   const [placeCardHeight, setPlaceCardHeight] = useState(0);
@@ -189,10 +185,6 @@ export default function Map() {
 
         AdvancedMarkerElementRef.current = AdvancedMarkerElement;
 
-        // ====================
-        // Map
-        // ====================
-
         const map = new GoogleMap(mapContainerRef.current, {
           center: DEFAULT_CENTER,
 
@@ -210,7 +202,7 @@ export default function Map() {
         mapRef.current = map;
 
         // ====================
-        // Google POI Click
+        // POI Click
         // ====================
 
         map.addListener("click", async (event) => {
@@ -238,10 +230,6 @@ export default function Map() {
             console.error("지도 장소 선택 오류:", error);
           }
         });
-
-        // ====================
-        // 현재 위치
-        // ====================
 
         moveToCurrentLocation();
       } catch (error) {
@@ -293,40 +281,30 @@ export default function Map() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const location = {
+        const current = {
           lat: position.coords.latitude,
 
           lng: position.coords.longitude,
         };
 
-        setCurrentPosition(location);
+        setCurrentPosition(current);
 
-        // ====================
-        // Map Move
-        // ====================
-
-        map.panTo(location);
+        map.panTo(current);
 
         map.setZoom(15);
 
-        // ====================
-        // Current Marker
-        // ====================
-
         if (currentLocationMarkerRef.current) {
-          currentLocationMarkerRef.current.position = location;
+          currentLocationMarkerRef.current.position = current;
 
           currentLocationMarkerRef.current.map = map;
         } else {
-          const marker = new AdvancedMarkerElement({
+          currentLocationMarkerRef.current = new AdvancedMarkerElement({
             map,
 
-            position: location,
+            position: current,
 
             title: "현재 위치",
           });
-
-          currentLocationMarkerRef.current = marker;
         }
 
         setIsLocating(false);
@@ -377,26 +355,18 @@ export default function Map() {
   };
 
   // ====================
-  // Search Open
+  // Search
   // ====================
 
   const handleSearchOpen = () => {
     setIsSearchMode(true);
   };
 
-  // ====================
-  // Search Change
-  // ====================
-
   const handleSearchChange = (e) => {
     setKeyword(e.target.value);
 
     setSearchResults([]);
   };
-
-  // ====================
-  // Search Close
-  // ====================
 
   const handleSearchClose = () => {
     setKeyword("");
@@ -429,12 +399,7 @@ export default function Map() {
       return;
     }
 
-    if (
-      place.lat == null ||
-      place.lng == null ||
-      Number.isNaN(place.lat) ||
-      Number.isNaN(place.lng)
-    ) {
+    if (place.lat == null || place.lng == null) {
       return;
     }
 
@@ -443,10 +408,6 @@ export default function Map() {
 
       lng: place.lng,
     };
-
-    // ====================
-    // Marker
-    // ====================
 
     if (selectedMarkerRef.current) {
       selectedMarkerRef.current.position = position;
@@ -512,8 +473,6 @@ export default function Map() {
       });
 
       if (!results || results.length === 0) {
-        setSearchResults([]);
-
         alert("검색 결과가 없습니다.");
 
         return;
@@ -541,10 +500,6 @@ export default function Map() {
     }
   };
 
-  // ====================
-  // Search Result Select
-  // ====================
-
   const handlePlaceSelect = (place) => {
     setSelectedPlace(place);
 
@@ -556,7 +511,9 @@ export default function Map() {
   };
 
   // ====================
-  // Favorite Place Data
+  // Favorite Data
+  //
+  // 이미지 저장 X
   // ====================
 
   const createFavoritePlace = (tripId) => ({
@@ -584,8 +541,6 @@ export default function Map() {
 
     rating: selectedPlace.rating,
 
-    imageUrl: selectedPlace.imageUrl,
-
     url: selectedPlace.url,
 
     phone: selectedPlace.phone,
@@ -605,7 +560,7 @@ export default function Map() {
     }
 
     // ====================
-    // 특정 여행에서 진입
+    // 특정 Trip에서 진입
     // ====================
 
     if (mode === "favorite" && targetTripId) {
@@ -621,10 +576,6 @@ export default function Map() {
 
       return;
     }
-
-    // ====================
-    // 일반 Map
-    // ====================
 
     setIsTripSelectOpen(true);
   };
@@ -663,10 +614,6 @@ export default function Map() {
     setIsFavoriteSuccessOpen(true);
   };
 
-  // ====================
-  // Favorite Success Close
-  // ====================
-
   const handleFavoriteSuccessClose = () => {
     setIsFavoriteSuccessOpen(false);
 
@@ -677,6 +624,8 @@ export default function Map() {
 
   // ====================
   // Schedule Add
+  //
+  // 이미지 저장 X
   // ====================
 
   const handleScheduleAdd = () => {
@@ -722,15 +671,9 @@ export default function Map() {
 
       rating: selectedPlace.rating,
 
-      imageUrl: selectedPlace.imageUrl,
-
       url: selectedPlace.url,
 
       phone: selectedPlace.phone,
-
-      // ====================
-      // 추가
-      // ====================
 
       openingHours: selectedPlace.openingHours || [],
 
@@ -755,7 +698,7 @@ export default function Map() {
   };
 
   // ====================
-  // Accommodation Add
+  // Accommodation
   // ====================
 
   const handleAccommodationAdd = () => {
@@ -765,10 +708,6 @@ export default function Map() {
 
     setIsAccommodationPeriodOpen(true);
   };
-
-  // ====================
-  // Accommodation Save
-  // ====================
 
   const handleAccommodationSave = (period) => {
     if (!selectedPlace || !targetTripId) {
@@ -798,8 +737,6 @@ export default function Map() {
 
       lng: selectedPlace.lng,
 
-      imageUrl: selectedPlace.imageUrl,
-
       checkInDate: period.checkInDate,
 
       checkInTime: period.checkInTime,
@@ -827,30 +764,20 @@ export default function Map() {
   };
 
   // ====================
-  // Current Location Position
+  // Position
   // ====================
 
   const currentLocationBottom = selectedPlace
     ? 100 + placeCardHeight + 12
     : 110;
 
-  // ====================
-  // Modal Open
-  // ====================
-
   const isModalOpen =
     isTripSelectOpen || isFavoriteSuccessOpen || isAccommodationPeriodOpen;
-
-  // ====================
-  // Render
-  // ====================
 
   return (
     <main className="relative h-dvh overflow-hidden bg-white text-[#191919]">
       <div className="relative mx-auto h-dvh w-full max-w-[390px] overflow-hidden">
-        {/* ====================
-            Google Map
-        ==================== */}
+        {/* Map */}
 
         <div
           ref={mapContainerRef}
@@ -862,9 +789,7 @@ export default function Map() {
           "
         />
 
-        {/* ====================
-            Header
-        ==================== */}
+        {/* Header */}
 
         <MapHeader
           isSearchMode={isSearchMode}
@@ -878,9 +803,7 @@ export default function Map() {
           onPlaceSelect={handlePlaceSelect}
         />
 
-        {/* ====================
-            Current Location
-        ==================== */}
+        {/* Current Location */}
 
         <button
           type="button"
@@ -908,9 +831,7 @@ export default function Map() {
           <LocateFixed size={22} strokeWidth={1.5} />
         </button>
 
-        {/* ====================
-            Place Card
-        ==================== */}
+        {/* Place Card */}
 
         {selectedPlace && (
           <PlaceCard
@@ -923,15 +844,7 @@ export default function Map() {
           />
         )}
 
-        {/* ====================
-            Bottom Navigation
-        ==================== */}
-
         {!isModalOpen && <BottomNav />}
-
-        {/* ====================
-            Trip Select
-        ==================== */}
 
         <TripSelectModal
           isOpen={isTripSelectOpen}
@@ -940,20 +853,12 @@ export default function Map() {
           onSelect={handleTripSelect}
         />
 
-        {/* ====================
-            Favorite Success
-        ==================== */}
-
         <FavoriteAddSuccessModal
           isOpen={isFavoriteSuccessOpen}
           tripTitle={favoriteSuccessTripTitle}
           placeName={favoriteSuccessPlaceName}
           onClose={handleFavoriteSuccessClose}
         />
-
-        {/* ====================
-            Accommodation
-        ==================== */}
 
         {targetTrip && (
           <AccommodationPeriodModal

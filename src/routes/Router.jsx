@@ -10,6 +10,7 @@ import Home from "../pages/home/Home";
 import TripCreate from "../pages/tripCreate/TripCreate";
 import TripDetail from "../pages/tripDetail/TripDetail";
 import Map from "../pages/map/Map";
+import MyPage from "../pages/myPage/MyPage";
 
 export default function Router() {
   return (
@@ -55,6 +56,15 @@ export default function Router() {
           element={
             <ProtectedRoute>
               <Map />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/mypage"
+          element={
+            <ProtectedRoute>
+              <MyPage />
             </ProtectedRoute>
           }
         />

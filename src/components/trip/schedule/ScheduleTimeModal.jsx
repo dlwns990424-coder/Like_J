@@ -1,8 +1,328 @@
 import { useEffect, useState } from "react";
 
-import { X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, X } from "lucide-react";
 
 import { createPortal } from "react-dom";
+
+// ====================
+// Time Utils
+// ====================
+
+const HOURS = Array.from({ length: 12 }, (_, index) =>
+  String(index + 1).padStart(2, "0"),
+);
+
+const MINUTES = ["00", "10", "20", "30", "40", "50"];
+
+const parseTime = (time) => {
+  if (!time) {
+    return {
+      period: "오전",
+      hour: "12",
+      minute: "00",
+    };
+  }
+
+  const [hourValue, minuteValue] = time.split(":");
+
+  const hour24 = Number(hourValue);
+
+  const period = hour24 >= 12 ? "오후" : "오전";
+
+  let hour12 = hour24 % 12;
+
+  if (hour12 === 0) {
+    hour12 = 12;
+  }
+
+  return {
+    period,
+    hour: String(hour12).padStart(2, "0"),
+    minute: minuteValue || "00",
+  };
+};
+
+const to24HourTime = ({ period, hour, minute }) => {
+  let hour24 = Number(hour);
+
+  if (period === "오전" && hour24 === 12) {
+    hour24 = 0;
+  }
+
+  if (period === "오후" && hour24 !== 12) {
+    hour24 += 12;
+  }
+
+  return `${String(hour24).padStart(2, "0")}:${minute}`;
+};
+
+// ====================
+// Time Picker
+// ====================
+
+function TimePicker({ value, onChange }) {
+  const [openMenu, setOpenMenu] = useState(null);
+
+  const parsedTime = parseTime(value);
+
+  const handleChange = (type, nextValue) => {
+    const nextTime = {
+      ...parsedTime,
+      [type]: nextValue,
+    };
+
+    onChange(to24HourTime(nextTime));
+
+    setOpenMenu(null);
+  };
+
+  return (
+    <div className="grid grid-cols-[1fr_1fr_1fr] gap-[6px]">
+      {/* ====================
+          오전 / 오후
+      ==================== */}
+
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() =>
+            setOpenMenu((prev) => (prev === "period" ? null : "period"))
+          }
+          className="
+            flex
+            h-[44px]
+            w-full
+            items-center
+            justify-between
+            rounded-lg
+            border
+            border-[#D9D9D9]
+            bg-white
+            px-[10px]
+            text-[13px]
+            outline-none
+          "
+        >
+          <span className={value ? "text-[#191919]" : "text-[#888888]"}>
+            {value ? parsedTime.period : "오전"}
+          </span>
+
+          {openMenu === "period" ? (
+            <ChevronDown size={14} strokeWidth={1.5} className="shrink-0" />
+          ) : (
+            <ChevronUp size={14} strokeWidth={1.5} className="shrink-0" />
+          )}
+        </button>
+
+        {openMenu === "period" && (
+          <div
+            className="
+              absolute
+              bottom-[50px]
+              left-0
+              z-[100010]
+              w-full
+              overflow-hidden
+              rounded-lg
+              border
+              border-[#D9D9D9]
+              bg-white
+              shadow-lg
+            "
+          >
+            {["오전", "오후"].map((period) => (
+              <button
+                key={period}
+                type="button"
+                onClick={() => handleChange("period", period)}
+                className="
+                  flex
+                  h-[40px]
+                  w-full
+                  items-center
+                  justify-between
+                  px-[10px]
+                  text-[13px]
+                  hover:bg-[#F5F5F5]
+                "
+              >
+                <span>{period}</span>
+
+                {value && parsedTime.period === period && (
+                  <Check size={14} strokeWidth={2} className="text-[#3478F6]" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ====================
+          시
+      ==================== */}
+
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() =>
+            setOpenMenu((prev) => (prev === "hour" ? null : "hour"))
+          }
+          className="
+            flex
+            h-[44px]
+            w-full
+            items-center
+            justify-between
+            rounded-lg
+            border
+            border-[#D9D9D9]
+            bg-white
+            px-[10px]
+            text-[13px]
+            outline-none
+          "
+        >
+          <span className={value ? "text-[#191919]" : "text-[#888888]"}>
+            {value ? parsedTime.hour : "시"}
+          </span>
+
+          {openMenu === "hour" ? (
+            <ChevronDown size={14} strokeWidth={1.5} className="shrink-0" />
+          ) : (
+            <ChevronUp size={14} strokeWidth={1.5} className="shrink-0" />
+          )}
+        </button>
+
+        {openMenu === "hour" && (
+          <div
+            className="
+              hide-scrollbar
+              absolute
+              bottom-[50px]
+              left-0
+              z-[100010]
+              max-h-[180px]
+              w-full
+              overflow-y-auto
+              rounded-lg
+              border
+              border-[#D9D9D9]
+              bg-white
+              shadow-lg
+            "
+          >
+            {HOURS.map((hour) => (
+              <button
+                key={hour}
+                type="button"
+                onClick={() => handleChange("hour", hour)}
+                className="
+                  flex
+                  h-[40px]
+                  w-full
+                  shrink-0
+                  items-center
+                  justify-between
+                  px-[10px]
+                  text-[13px]
+                  hover:bg-[#F5F5F5]
+                "
+              >
+                <span>{hour}</span>
+
+                {value && parsedTime.hour === hour && (
+                  <Check size={14} strokeWidth={2} className="text-[#3478F6]" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ====================
+          분
+      ==================== */}
+
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() =>
+            setOpenMenu((prev) => (prev === "minute" ? null : "minute"))
+          }
+          className="
+            flex
+            h-[44px]
+            w-full
+            items-center
+            justify-between
+            rounded-lg
+            border
+            border-[#D9D9D9]
+            bg-white
+            px-[10px]
+            text-[13px]
+            outline-none
+          "
+        >
+          <span className={value ? "text-[#191919]" : "text-[#888888]"}>
+            {value ? parsedTime.minute : "분"}
+          </span>
+
+          {openMenu === "minute" ? (
+            <ChevronDown size={14} strokeWidth={1.5} className="shrink-0" />
+          ) : (
+            <ChevronUp size={14} strokeWidth={1.5} className="shrink-0" />
+          )}
+        </button>
+
+        {openMenu === "minute" && (
+          <div
+            className="
+              hide-scrollbar
+              absolute
+              bottom-[50px]
+              right-0
+              z-[100010]
+              max-h-[180px]
+              w-full
+              overflow-y-auto
+              rounded-lg
+              border
+              border-[#D9D9D9]
+              bg-white
+              shadow-lg
+            "
+          >
+            {MINUTES.map((minute) => (
+              <button
+                key={minute}
+                type="button"
+                onClick={() => handleChange("minute", minute)}
+                className="
+                  flex
+                  h-[40px]
+                  w-full
+                  shrink-0
+                  items-center
+                  justify-between
+                  px-[10px]
+                  text-[13px]
+                  hover:bg-[#F5F5F5]
+                "
+              >
+                <span>{minute}</span>
+
+                {value && parsedTime.minute === minute && (
+                  <Check size={14} strokeWidth={2} className="text-[#3478F6]" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function ScheduleTimeModal({
   isOpen,
@@ -117,8 +437,10 @@ export default function ScheduleTimeModal({
         className="
           relative
           z-[100000]
+          max-h-[calc(100dvh-20px)]
           w-full
           max-w-[390px]
+          overflow-visible
           rounded-t-[24px]
           bg-white
           px-5
@@ -140,7 +462,12 @@ export default function ScheduleTimeModal({
         <div className="flex items-center justify-between">
           <h2
             id="schedule-time-title"
-            className="text-[20px] font-semibold leading-[28px] tracking-[-0.02em]"
+            className="
+              text-[20px]
+              font-semibold
+              leading-[28px]
+              tracking-[-0.02em]
+            "
           >
             시간 설정
           </h2>
@@ -163,87 +490,43 @@ export default function ScheduleTimeModal({
         </div>
 
         {/* ====================
-            Time Inputs
+            Start Time
         ==================== */}
 
-        <div className="mt-[24px] flex gap-[12px]">
-          {/* ====================
-              Start
-          ==================== */}
+        <div className="mt-[24px]">
+          <label
+            className="
+              mb-[8px]
+              block
+              text-[13px]
+              leading-[20px]
+              text-[#555555]
+            "
+          >
+            시작 시간
+          </label>
 
-          <div className="min-w-0 flex-1">
-            <label
-              htmlFor="schedule-start-time"
-              className="
-                mb-[8px]
-                block
-                text-[13px]
-                leading-[20px]
-                text-[#555555]
-              "
-            >
-              시작 시간
-            </label>
+          <TimePicker value={start} onChange={setStart} />
+        </div>
 
-            <input
-              id="schedule-start-time"
-              type="time"
-              value={start}
-              onChange={(e) => setStart(e.target.value)}
-              className="
-                h-[52px]
-                w-full
-                rounded-xl
-                border
-                border-[#D9D9D9]
-                bg-white
-                px-[12px]
-                text-[16px]
-                leading-[24px]
-                outline-none
-                focus:border-[#3478F6]
-              "
-            />
-          </div>
+        {/* ====================
+            End Time
+        ==================== */}
 
-          {/* ====================
-              End
-          ==================== */}
+        <div className="mt-[18px]">
+          <label
+            className="
+              mb-[8px]
+              block
+              text-[13px]
+              leading-[20px]
+              text-[#555555]
+            "
+          >
+            종료 시간
+          </label>
 
-          <div className="min-w-0 flex-1">
-            <label
-              htmlFor="schedule-end-time"
-              className="
-                mb-[8px]
-                block
-                text-[13px]
-                leading-[20px]
-                text-[#555555]
-              "
-            >
-              종료 시간
-            </label>
-
-            <input
-              id="schedule-end-time"
-              type="time"
-              value={end}
-              onChange={(e) => setEnd(e.target.value)}
-              className="
-                h-[52px]
-                w-full
-                rounded-xl
-                border
-                border-[#D9D9D9]
-                bg-white
-                px-[12px]
-                text-[16px]
-                leading-[24px]
-                outline-none
-                focus:border-[#3478F6]
-              "
-            />
-          </div>
+          <TimePicker value={end} onChange={setEnd} />
         </div>
 
         {/* ====================

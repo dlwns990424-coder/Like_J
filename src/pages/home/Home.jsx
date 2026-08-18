@@ -38,7 +38,6 @@ export default function Home() {
           mx-auto
           min-h-dvh
           w-full
-          max-w-[390px]
         "
       >
         {/* ====================

@@ -41,6 +41,40 @@ export const removeCurrentUser = () => {
 };
 
 // ====================
+// User Name Update
+// ====================
+
+export const updateUserName = (userId, name) => {
+  const users = getUsers();
+
+  const updatedUsers = users.map((user) =>
+    user.id === userId
+      ? {
+          ...user,
+          name,
+        }
+      : user,
+  );
+
+  localStorage.setItem("users", JSON.stringify(updatedUsers));
+
+  const currentUser = getCurrentUser();
+
+  if (!currentUser || currentUser.id !== userId) {
+    return null;
+  }
+
+  const updatedCurrentUser = {
+    ...currentUser,
+    name,
+  };
+
+  saveCurrentUser(updatedCurrentUser);
+
+  return updatedCurrentUser;
+};
+
+// ====================
 // Trip
 // ====================
 
@@ -85,6 +119,14 @@ export const updateTrip = (tripId, updatedData) => {
   localStorage.setItem("trips", JSON.stringify(updatedTrips));
 };
 
+export const deleteTrips = (tripIds) => {
+  const trips = getTrips();
+
+  const updatedTrips = trips.filter((trip) => !tripIds.includes(trip.id));
+
+  localStorage.setItem("trips", JSON.stringify(updatedTrips));
+};
+
 // ====================
 // Favorite Place
 // ====================
@@ -121,6 +163,31 @@ export const getFavoritePlacesByTripId = (tripId) => {
   return favoritePlaces.filter(
     (favoritePlace) => favoritePlace.tripId === tripId,
   );
+};
+
+export const updateFavoritePlace = (favoritePlaceId, updatedData) => {
+  const favoritePlaces = getFavoritePlaces();
+
+  const updatedFavoritePlaces = favoritePlaces.map((favoritePlace) =>
+    favoritePlace.id === favoritePlaceId
+      ? {
+          ...favoritePlace,
+          ...updatedData,
+        }
+      : favoritePlace,
+  );
+
+  localStorage.setItem("favoritePlaces", JSON.stringify(updatedFavoritePlaces));
+};
+
+export const deleteFavoritePlaces = (favoritePlaceIds) => {
+  const favoritePlaces = getFavoritePlaces();
+
+  const updatedFavoritePlaces = favoritePlaces.filter(
+    (favoritePlace) => !favoritePlaceIds.includes(favoritePlace.id),
+  );
+
+  localStorage.setItem("favoritePlaces", JSON.stringify(updatedFavoritePlaces));
 };
 
 // ====================

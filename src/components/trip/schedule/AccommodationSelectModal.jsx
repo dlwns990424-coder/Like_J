@@ -125,7 +125,6 @@ export default function AccommodationSelectModal({
             bg-[#3478F6]
             px-[14px]
             text-[14px]
-            font-semibold
             leading-[20px]
             text-white
           "
