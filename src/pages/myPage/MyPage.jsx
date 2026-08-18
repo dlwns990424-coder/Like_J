@@ -623,19 +623,47 @@ export default function MyPage() {
             ) : (
               <div
                 className="
-                  mt-[12px]
-                  flex
-                  h-[160px]
-                  items-center
-                  justify-center
-                  rounded-xl
-                  border
-                  border-[#D9D9D9]
-                  text-[14px]
-                  text-[#888888]
+                mt-[12px]
+                flex
+                h-[180px]
+                flex-col
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-[#D9D9D9]
+                px-[20px]
                 "
               >
-                등록된 여행이 없습니다.
+                <p
+                  className="
+                    text-[14px]
+                    leading-[20px]
+                    text-[#888888]
+                "
+                >
+                  등록된 여행이 없습니다.
+                </p>
+
+                <Link
+                  to="/trip-create"
+                  className="
+                    click-scale
+                    mt-[16px]
+                    flex
+                    h-[42px]
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-[#3478F6]
+                    px-[20px]
+                    text-[14px]
+                    leading-[20px]
+                    text-white
+      "
+                >
+                  새 여행 계획 만들기
+                </Link>
               </div>
             )}
           </section>

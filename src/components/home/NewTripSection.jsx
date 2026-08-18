@@ -66,8 +66,8 @@ export default function NewTripSection() {
             justify-center
             rounded-full
             bg-[#3478F6]
-            px-[10px]
-            py-[6px]
+            px-[16px]
+            py-[8px]
             text-[14px]
             leading-[24px]
             text-white
