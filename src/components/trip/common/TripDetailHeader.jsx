@@ -20,9 +20,14 @@ export default function TripDetailHeader({ title, isSolid, onHome, onDelete }) {
       `}
     >
       <div className="relative flex h-[60px] items-center justify-between px-5">
+        {/* ====================
+            Home
+        ==================== */}
+
         <button
           type="button"
           onClick={onHome}
+          aria-label="홈으로 이동"
           className={`
             relative
             z-10
@@ -40,6 +45,10 @@ export default function TripDetailHeader({ title, isSolid, onHome, onDelete }) {
         >
           <Home size={22} strokeWidth={1.5} />
         </button>
+
+        {/* ====================
+            Title
+        ==================== */}
 
         <div
           className="
@@ -73,9 +82,14 @@ export default function TripDetailHeader({ title, isSolid, onHome, onDelete }) {
           </p>
         </div>
 
+        {/* ====================
+            Delete
+        ==================== */}
+
         <button
           type="button"
           onClick={onDelete}
+          aria-label="여행 삭제"
           className={`
             relative
             z-10

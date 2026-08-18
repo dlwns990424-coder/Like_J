@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Check,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Clock3,
   Globe,
@@ -14,6 +15,8 @@ import {
   X,
 } from "lucide-react";
 
+import { createPortal } from "react-dom";
+
 import { useNavigate } from "react-router-dom";
 
 import ScheduleMemo from "../schedule/ScheduleMemo";
@@ -21,6 +24,9 @@ import ScheduleMemoModal from "../schedule/ScheduleMemoModal";
 
 import FavoritePlaceEditMenu from "./FavoritePlaceEditMenu";
 import FavoritePlaceEmptyGuide from "./FavoritePlaceEmptyGuide";
+
+import Toast from "../../common/Toast";
+import ConfirmModal from "../../common/ConfirmModal";
 
 import {
   deleteFavoritePlaces,
@@ -110,7 +116,7 @@ function ScheduleDateModal({ isOpen, trip, onClose, onSelect }) {
 
   const tripDates = getTripDates(trip.startDate, trip.endDate);
 
-  return (
+  return createPortal(
     <div
       className="
         fixed
@@ -122,11 +128,16 @@ function ScheduleDateModal({ isOpen, trip, onClose, onSelect }) {
         bg-black/40
       "
       onClick={onClose}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+      }}
     >
       <section
         role="dialog"
         aria-modal="true"
         className="
+          relative
+          z-[100000]
           max-h-[80dvh]
           w-full
           max-w-[390px]
@@ -141,32 +152,16 @@ function ScheduleDateModal({ isOpen, trip, onClose, onSelect }) {
         onClick={(e) => {
           e.stopPropagation();
         }}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+        }}
       >
-        {/* ====================
-            Header
-        ==================== */}
-
         <div className="flex items-start justify-between">
           <div>
-            <h2
-              className="
-                text-[20px]
-                font-semibold
-                leading-[28px]
-                tracking-[-0.02em]
-              "
-            >
+            <h2 className="text-[20px] font-semibold leading-[28px] tracking-[-0.02em]">
               일정 날짜 선택
             </h2>
-
-            <p
-              className="
-                mt-[4px]
-                text-[13px]
-                leading-[20px]
-                text-[#888888]
-              "
-            >
+            <p className="mt-[4px] text-[13px] leading-[20px] text-[#888888]">
               장소를 추가할 날짜를 선택해주세요.
             </p>
           </div>
@@ -175,154 +170,59 @@ function ScheduleDateModal({ isOpen, trip, onClose, onSelect }) {
             type="button"
             onClick={onClose}
             aria-label="닫기"
-            className="
-              click-scale-sm
-              flex
-              h-[36px]
-              w-[36px]
-              shrink-0
-              items-center
-              justify-center
-            "
+            className="click-scale-sm flex h-[36px] w-[36px] shrink-0 items-center justify-center"
           >
             <X size={20} strokeWidth={1.5} />
           </button>
         </div>
 
-        {/* ====================
-            Trip Information
-        ==================== */}
-
-        <div
-          className="
-            mt-[20px]
-            rounded-xl
-            bg-[#F5F5F5]
-            px-[14px]
-            py-[12px]
-          "
-        >
-          <p
-            className="
-              text-[15px]
-              font-semibold
-              leading-[22px]
-            "
-          >
+        <div className="mt-[20px] rounded-xl bg-[#F5F5F5] px-[14px] py-[12px]">
+          <p className="text-[15px] font-semibold leading-[22px]">
             {trip.title}
           </p>
-
-          <div
-            className="
-              mt-[4px]
-              flex
-              items-center
-              gap-[6px]
-              text-[12px]
-              leading-[18px]
-              text-[#888888]
-            "
-          >
+          <div className="mt-[4px] flex items-center gap-[6px] text-[12px] leading-[18px] text-[#888888]">
             <CalendarDays size={14} strokeWidth={1.5} />
-
             <span>
               {trip.startDate} ~ {trip.endDate}
             </span>
           </div>
         </div>
 
-        {/* ====================
-            Date List
-        ==================== */}
-
         {tripDates.length > 0 ? (
-          <div
-            className="
-              hide-scrollbar
-              mt-[16px]
-              flex
-              max-h-[380px]
-              flex-col
-              gap-[8px]
-              overflow-y-auto
-            "
-          >
+          <div className="hide-scrollbar mt-[16px] flex max-h-[380px] flex-col gap-[8px] overflow-y-auto">
             {tripDates.map((date, index) => (
               <button
                 key={date}
                 type="button"
                 onClick={() => onSelect(date)}
-                className="
-                  click-scale
-                  flex
-                  w-full
-                  items-center
-                  justify-between
-                  rounded-xl
-                  border
-                  border-[#D9D9D9]
-                  bg-white
-                  px-[14px]
-                  py-[12px]
-                  text-left
-                "
+                className="click-scale flex w-full items-center justify-between rounded-xl border border-[#D9D9D9] bg-white px-[14px] py-[12px] text-left"
               >
                 <div>
-                  <p
-                    className="
-                      text-[14px]
-                      font-semibold
-                      leading-[20px]
-                    "
-                  >
+                  <p className="text-[14px] font-semibold leading-[20px]">
                     Day {index + 1}
                   </p>
-
-                  <p
-                    className="
-                      mt-[2px]
-                      text-[13px]
-                      leading-[18px]
-                      text-[#555555]
-                    "
-                  >
+                  <p className="mt-[2px] text-[13px] leading-[18px] text-[#555555]">
                     {formatDateLabel(date)}
                   </p>
                 </div>
-
-                <ChevronDown
+                <ChevronRight
                   size={17}
                   strokeWidth={1.5}
-                  className="-rotate-90 text-[#888888]"
+                  className="text-[#888888]"
                 />
               </button>
             ))}
           </div>
         ) : (
-          <div
-            className="
-              mt-[20px]
-              flex
-              min-h-[100px]
-              items-center
-              justify-center
-              rounded-xl
-              bg-[#F5F5F5]
-            "
-          >
-            <p
-              className="
-                text-[13px]
-                leading-[20px]
-                text-[#888888]
-              "
-            >
+          <div className="mt-[20px] flex min-h-[100px] items-center justify-center rounded-xl bg-[#F5F5F5]">
+            <p className="text-[13px] leading-[20px] text-[#888888]">
               여행 날짜를 확인해주세요.
             </p>
           </div>
         )}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -596,38 +496,50 @@ function FavoritePlaceCard({
           기본 정보
       ==================== */}
 
-      <div className="min-w-0">
-        <h3
-          className={`
-            truncate
-            text-[16px]
-            font-semibold
-            leading-[24px]
-            tracking-[-0.01em]
+      <div className="flex gap-[12px]">
+        <div className="min-w-0 flex-1">
+          <h3
+            className={`
+              truncate
+              text-[16px]
+              font-semibold
+              leading-[24px]
+              tracking-[-0.01em]
 
-            ${isEditMode ? "pr-[28px]" : ""}
-          `}
-        >
-          {place.name}
-        </h3>
-
-        {place.category && (
-          <span
-            className="
-              mt-[4px]
-              inline-flex
-              rounded-md
-              bg-[#F5F5F5]
-              px-[6px]
-              py-[2px]
-              text-[10px]
-              leading-[16px]
-              text-[#555555]
-            "
+              ${isEditMode ? "pr-[28px]" : ""}
+            `}
           >
-            {place.category}
-          </span>
-        )}
+            {place.name}
+          </h3>
+
+          {place.category && (
+            <span
+              className="
+                mt-[4px]
+                inline-flex
+                rounded-md
+                bg-[#F5F5F5]
+                px-[6px]
+                py-[2px]
+                text-[10px]
+                leading-[16px]
+                text-[#555555]
+              "
+            >
+              {place.category}
+            </span>
+          )}
+        </div>
+
+        <div className="h-[64px] w-[64px] shrink-0 overflow-hidden rounded-lg bg-[#D9D9D9]">
+          {place.imageUrl && (
+            <img
+              src={place.imageUrl}
+              alt={place.name}
+              className="h-full w-full object-cover"
+            />
+          )}
+        </div>
       </div>
 
       {/* ====================
@@ -908,7 +820,7 @@ function FavoritePlaceCard({
 // Favorite Places
 // ====================
 
-export default function FavoritePlaces({ tripId }) {
+export default function FavoritePlaces({ tripId, onScheduleAdded }) {
   const navigate = useNavigate();
 
   // ====================
@@ -934,6 +846,14 @@ export default function FavoritePlaces({ tripId }) {
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
 
   // ====================
+  // Toast
+  // ====================
+
+  const [isToastOpen, setIsToastOpen] = useState(false);
+
+  const [toastMessage, setToastMessage] = useState("");
+
+  // ====================
   // Memo
   // ====================
 
@@ -948,6 +868,12 @@ export default function FavoritePlaces({ tripId }) {
   const [isEditMode, setIsEditMode] = useState(false);
 
   const [selectedPlaceIds, setSelectedPlaceIds] = useState([]);
+
+  // ====================
+  // Delete Confirm
+  // ====================
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // ====================
   // Refresh
@@ -1086,19 +1012,9 @@ export default function FavoritePlaces({ tripId }) {
       return;
     }
 
-    const confirmed = window.confirm(
-      `선택한 관심 장소 ${selectedPlaceIds.length}개를 삭제할까요?`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    deleteFavoritePlaces(selectedPlaceIds);
-
-    setSelectedPlaceIds([]);
-
-    refreshFavoritePlaces();
+    setDeleteTarget({
+      type: "selectedPlaces",
+    });
   };
 
   // ====================
@@ -1110,22 +1026,73 @@ export default function FavoritePlaces({ tripId }) {
       return;
     }
 
-    const confirmed = window.confirm("관심 장소를 모두 삭제할까요?");
+    setDeleteTarget({
+      type: "allPlaces",
+    });
+  };
 
-    if (!confirmed) {
+  // ====================
+  // Delete Confirm
+  // ====================
+
+  const handleDeleteConfirm = () => {
+    if (!deleteTarget) {
       return;
     }
 
-    const placeIds = favoritePlaces.map((place) => place.id);
+    if (deleteTarget.type === "selectedPlaces") {
+      deleteFavoritePlaces(selectedPlaceIds);
 
-    deleteFavoritePlaces(placeIds);
+      setSelectedPlaceIds([]);
 
-    setSelectedPlaceIds([]);
+      setDeleteTarget(null);
 
-    setIsEditMode(false);
+      refreshFavoritePlaces();
 
-    refreshFavoritePlaces();
+      return;
+    }
+
+    if (deleteTarget.type === "allPlaces") {
+      const placeIds = favoritePlaces.map((place) => place.id);
+
+      deleteFavoritePlaces(placeIds);
+
+      setSelectedPlaceIds([]);
+
+      setIsEditMode(false);
+
+      setDeleteTarget(null);
+
+      refreshFavoritePlaces();
+    }
   };
+
+  // ====================
+  // Delete Modal Text
+  // ====================
+
+  const getDeleteModalContent = () => {
+    if (deleteTarget?.type === "selectedPlaces") {
+      return {
+        title: "관심 장소를 삭제할까요?",
+        message: `선택한 관심 장소 ${selectedPlaceIds.length}개가 삭제됩니다.`,
+      };
+    }
+
+    if (deleteTarget?.type === "allPlaces") {
+      return {
+        title: "관심 장소를 모두 삭제할까요?",
+        message: "등록된 모든 관심 장소가 삭제됩니다.",
+      };
+    }
+
+    return {
+      title: "삭제할까요?",
+      message: "",
+    };
+  };
+
+  const deleteModalContent = getDeleteModalContent();
 
   // ====================
   // Schedule Modal Open
@@ -1196,6 +1163,8 @@ export default function FavoritePlaces({ tripId }) {
 
       rating: selectedPlace.rating,
 
+      imageUrl: selectedPlace.imageUrl || "",
+
       url: selectedPlace.url,
 
       phone: selectedPlace.phone,
@@ -1213,9 +1182,17 @@ export default function FavoritePlaces({ tripId }) {
       order: nextOrder,
     });
 
+    onScheduleAdded?.();
+
+    const tripDates = getTripDates(trip.startDate, trip.endDate);
+
+    const dayIndex = tripDates.findIndex((tripDate) => tripDate === date) + 1;
+
     handleScheduleClose();
 
-    alert(`${formatDateLabel(date)} 일정에 추가되었습니다.`);
+    setToastMessage(`Day ${dayIndex} 일정에 추가했어요.`);
+
+    setIsToastOpen(true);
   };
 
   // ====================
@@ -1392,6 +1369,33 @@ export default function FavoritePlaces({ tripId }) {
         onClose={handleMemoClose}
         onSave={handleMemoSave}
         onDelete={handleMemoDelete}
+      />
+
+      {/* ====================
+          Toast
+      ==================== */}
+
+      <Toast
+        isOpen={isToastOpen}
+        message={toastMessage}
+        onClose={() => {
+          setIsToastOpen(false);
+        }}
+      />
+
+      {/* ====================
+          Delete Confirm Modal
+      ==================== */}
+
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        title={deleteModalContent.title}
+        message={deleteModalContent.message}
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+        danger
       />
     </>
   );

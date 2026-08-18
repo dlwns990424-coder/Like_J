@@ -1,7 +1,12 @@
 import TripMemo from "./TripMemo";
 import FavoritePlaces from "./FavoritePlaces";
 
-export default function TripPrepare({ trip, containerRef, onScroll }) {
+export default function TripPrepare({
+  trip,
+  containerRef,
+  onScroll,
+  onScheduleAdded,
+}) {
   return (
     <div
       ref={containerRef}
@@ -35,7 +40,7 @@ export default function TripPrepare({ trip, containerRef, onScroll }) {
       <section className="flex min-h-dvh flex-col gap-[28px] px-5 pt-[28px]">
         <TripMemo trip={trip} />
 
-        <FavoritePlaces tripId={trip.id} />
+        <FavoritePlaces tripId={trip.id} onScheduleAdded={onScheduleAdded} />
       </section>
     </div>
   );

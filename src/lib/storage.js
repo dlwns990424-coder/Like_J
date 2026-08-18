@@ -422,16 +422,256 @@ export const getExpenses = () => {
   return expenses ? JSON.parse(expenses) : [];
 };
 
+// ====================
+// Save Expense
+// ====================
+
 export const saveExpense = (expense) => {
   const expenses = getExpenses();
 
   expenses.push(expense);
 
   localStorage.setItem("expenses", JSON.stringify(expenses));
+
+  return expense;
 };
+
+// ====================
+// Trip Expenses
+// ====================
 
 export const getExpensesByTripId = (tripId) => {
   const expenses = getExpenses();
 
   return expenses.filter((expense) => expense.tripId === tripId);
+};
+
+// ====================
+// Trip + Date Expenses
+// ====================
+
+export const getExpensesByTripAndDate = (tripId, date) => {
+  const expenses = getExpensesByTripId(tripId);
+
+  return expenses.filter((expense) => expense.date === date);
+};
+
+// ====================
+// Schedule Expense
+// ====================
+
+export const getExpensesByScheduleId = (scheduleId) => {
+  const expenses = getExpenses();
+
+  return expenses.filter(
+    (expense) =>
+      expense.type === "schedule" && expense.scheduleId === scheduleId,
+  );
+};
+
+// ====================
+// Update Expense
+// ====================
+
+export const updateExpense = (expenseId, updatedData) => {
+  const expenses = getExpenses();
+
+  const updatedExpenses = expenses.map((expense) =>
+    expense.id === expenseId
+      ? {
+          ...expense,
+          ...updatedData,
+        }
+      : expense,
+  );
+
+  localStorage.setItem("expenses", JSON.stringify(updatedExpenses));
+};
+
+// ====================
+// Delete Expense
+// ====================
+
+export const deleteExpense = (expenseId) => {
+  const expenses = getExpenses();
+
+  const updatedExpenses = expenses.filter(
+    (expense) => expense.id !== expenseId,
+  );
+
+  localStorage.setItem("expenses", JSON.stringify(updatedExpenses));
+};
+
+// ====================
+// Trip Date Range Cleanup
+// ====================
+
+export const cleanupTripDataOutsideRange = (tripId, startDate, endDate) => {
+  // ====================
+  // Schedule
+  // ====================
+
+  const schedules = getSchedules();
+
+  const removedSchedules = schedules.filter(
+    (schedule) =>
+      schedule.tripId === tripId &&
+      (schedule.date < startDate || schedule.date > endDate),
+  );
+
+  const removedScheduleIds = removedSchedules.map((schedule) => schedule.id);
+
+  const updatedSchedules = schedules.filter(
+    (schedule) =>
+      !(
+        schedule.tripId === tripId &&
+        (schedule.date < startDate || schedule.date > endDate)
+      ),
+  );
+
+  localStorage.setItem("schedules", JSON.stringify(updatedSchedules));
+
+  // ====================
+  // Schedule Memo
+  // ====================
+
+  const scheduleMemos = getScheduleMemos();
+
+  const updatedScheduleMemos = scheduleMemos.filter(
+    (memo) =>
+      !(
+        memo.tripId === tripId &&
+        (memo.date < startDate || memo.date > endDate)
+      ),
+  );
+
+  localStorage.setItem("scheduleMemos", JSON.stringify(updatedScheduleMemos));
+
+  // ====================
+  // Accommodation
+  // ====================
+
+  const accommodations = getAccommodations();
+
+  const updatedAccommodations = accommodations.filter((accommodation) => {
+    if (accommodation.tripId !== tripId) {
+      return true;
+    }
+
+    if (
+      accommodation.checkInDate < startDate ||
+      accommodation.checkOutDate > endDate
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+
+  localStorage.setItem("accommodations", JSON.stringify(updatedAccommodations));
+
+  // ====================
+  // Expense
+  // ====================
+
+  const expenses = getExpenses();
+
+  const updatedExpenses = expenses.filter((expense) => {
+    if (expense.tripId !== tripId) {
+      return true;
+    }
+
+    // 날짜가 있는 지출
+    if (expense.date && (expense.date < startDate || expense.date > endDate)) {
+      return false;
+    }
+
+    // 삭제된 일정에 연결된 지출
+    if (
+      expense.type === "schedule" &&
+      removedScheduleIds.includes(expense.scheduleId)
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+
+  localStorage.setItem("expenses", JSON.stringify(updatedExpenses));
+};
+
+// ====================
+// Delete Trip With Related Data
+// ====================
+
+export const deleteTripWithRelatedData = (tripId) => {
+  // ====================
+  // Trip
+  // ====================
+
+  const trips = getTrips();
+
+  const updatedTrips = trips.filter((trip) => trip.id !== tripId);
+
+  localStorage.setItem("trips", JSON.stringify(updatedTrips));
+
+  // ====================
+  // Favorite Places
+  // ====================
+
+  const favoritePlaces = getFavoritePlaces();
+
+  const updatedFavoritePlaces = favoritePlaces.filter(
+    (place) => place.tripId !== tripId,
+  );
+
+  localStorage.setItem("favoritePlaces", JSON.stringify(updatedFavoritePlaces));
+
+  // ====================
+  // Schedules
+  // ====================
+
+  const schedules = getSchedules();
+
+  const updatedSchedules = schedules.filter(
+    (schedule) => schedule.tripId !== tripId,
+  );
+
+  localStorage.setItem("schedules", JSON.stringify(updatedSchedules));
+
+  // ====================
+  // Schedule Memos
+  // ====================
+
+  const scheduleMemos = getScheduleMemos();
+
+  const updatedScheduleMemos = scheduleMemos.filter(
+    (memo) => memo.tripId !== tripId,
+  );
+
+  localStorage.setItem("scheduleMemos", JSON.stringify(updatedScheduleMemos));
+
+  // ====================
+  // Accommodations
+  // ====================
+
+  const accommodations = getAccommodations();
+
+  const updatedAccommodations = accommodations.filter(
+    (accommodation) => accommodation.tripId !== tripId,
+  );
+
+  localStorage.setItem("accommodations", JSON.stringify(updatedAccommodations));
+
+  // ====================
+  // Expenses
+  // ====================
+
+  const expenses = getExpenses();
+
+  const updatedExpenses = expenses.filter(
+    (expense) => expense.tripId !== tripId,
+  );
+
+  localStorage.setItem("expenses", JSON.stringify(updatedExpenses));
 };

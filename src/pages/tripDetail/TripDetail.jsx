@@ -3,16 +3,24 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import BottomNav from "../../components/common/BottomNav";
+import ConfirmModal from "../../components/common/ConfirmModal";
 
 import TripDetailHeader from "../../components/trip/common/TripDetailHeader";
 import TripDetailTabs from "../../components/trip/common/TripDetailTabs";
 import TripHero from "../../components/trip/common/TripHero";
+import TripDateEditModal from "../../components/trip/common/TripDateEditModal";
 
 import TripPrepare from "../../components/trip/prepare/TripPrepare";
 import TripSchedule from "../../components/trip/schedule/TripSchedule";
 import TripExpense from "../../components/trip/expense/TripExpense";
 
-import { getCurrentUser, getTripById } from "../../lib/storage";
+import {
+  cleanupTripDataOutsideRange,
+  deleteTripWithRelatedData,
+  getCurrentUser,
+  getTripById,
+  updateTrip,
+} from "../../lib/storage";
 
 const HEADER_HEIGHT = 60;
 const HERO_HEIGHT = 320;
@@ -34,7 +42,140 @@ export default function TripDetail() {
 
   const currentUser = getCurrentUser();
 
-  const trip = getTripById(id);
+  // ====================
+  // Trip
+  // ====================
+
+  const [trip, setTrip] = useState(() => getTripById(id));
+
+  // ====================
+  // Delete
+  // ====================
+
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
+  // ====================
+  // Trip Date Edit
+  // ====================
+
+  const [isDateEditOpen, setIsDateEditOpen] = useState(false);
+
+  const [pendingDateRange, setPendingDateRange] = useState(null);
+
+  const [isDateConfirmOpen, setIsDateConfirmOpen] = useState(false);
+
+  // ====================
+  // Trip Title Save
+  // ====================
+
+  const handleTripTitleSave = (title) => {
+    if (!trip) {
+      return;
+    }
+
+    updateTrip(trip.id, {
+      title,
+    });
+
+    setTrip((prev) => {
+      if (!prev) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        title,
+      };
+    });
+  };
+
+  // ====================
+  // Trip Date Edit Open
+  // ====================
+
+  const handleTripDateEditOpen = () => {
+    setIsDateEditOpen(true);
+  };
+
+  // ====================
+  // Trip Date Edit Close
+  // ====================
+
+  const handleTripDateEditClose = () => {
+    setIsDateEditOpen(false);
+  };
+
+  // ====================
+  // Trip Date Selected
+  // ====================
+
+  const handleTripDateSelected = ({ startDate, endDate }) => {
+    if (!trip) {
+      return;
+    }
+
+    if (startDate === trip.startDate && endDate === trip.endDate) {
+      setIsDateEditOpen(false);
+
+      return;
+    }
+
+    setPendingDateRange({
+      startDate,
+      endDate,
+    });
+
+    setIsDateEditOpen(false);
+
+    setIsDateConfirmOpen(true);
+  };
+
+  // ====================
+  // Trip Date Confirm Cancel
+  // ====================
+
+  const handleTripDateConfirmCancel = () => {
+    setIsDateConfirmOpen(false);
+
+    setPendingDateRange(null);
+  };
+
+  // ====================
+  // Trip Date Save
+  // ====================
+
+  const handleTripDateSave = () => {
+    if (!trip || !pendingDateRange) {
+      return;
+    }
+
+    const { startDate, endDate } = pendingDateRange;
+
+    cleanupTripDataOutsideRange(trip.id, startDate, endDate);
+
+    updateTrip(trip.id, {
+      startDate,
+      endDate,
+    });
+
+    setTrip((prev) => {
+      if (!prev) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        startDate,
+        endDate,
+      };
+    });
+
+    setScheduleVersion((prev) => prev + 1);
+
+    setIsDateConfirmOpen(false);
+
+    setPendingDateRange(null);
+  };
 
   // ====================
   // Initial Tab
@@ -64,6 +205,8 @@ export default function TripDetail() {
   const [animateTopArea, setAnimateTopArea] = useState(false);
 
   const [isHeroVisible, setIsHeroVisible] = useState(initialTab === "prepare");
+
+  const [scheduleVersion, setScheduleVersion] = useState(0);
 
   // ====================
   // Refs
@@ -108,6 +251,14 @@ export default function TripDetail() {
       document.documentElement.style.overflow = previousHtmlOverflow;
     };
   }, []);
+
+  // ====================
+  // Schedule Added
+  // ====================
+
+  const handleScheduleAdded = () => {
+    setScheduleVersion((prev) => prev + 1);
+  };
 
   // ====================
   // Safe Area
@@ -216,8 +367,7 @@ export default function TripDetail() {
   };
 
   // ====================
-  // 현재 탭
-  // History State 저장
+  // 현재 탭 History State 저장
   // ====================
 
   const syncTabState = (nextTab) => {
@@ -251,22 +401,13 @@ export default function TripDetail() {
 
     setAnimateTopArea(true);
 
-    // ====================
-    // Prepare
-    // ====================
-
     if (nextTab === "prepare") {
       setIsHeroVisible(true);
 
       setHeroOffset(getPrepareHeroOffset());
 
       setTabsTop(getPrepareTabsTop());
-    }
-
-    // ====================
-    // Schedule / Expense
-    // ====================
-    else {
+    } else {
       setHeroOffset(getHeroCollapsedOffset());
 
       setTabsTop(getHeaderBottom());
@@ -312,15 +453,45 @@ export default function TripDetail() {
   }, []);
 
   // ====================
-  // Navigation
+  // Home
   // ====================
 
   const handleHome = () => {
     navigate("/home");
   };
 
+  // ====================
+  // Delete Open
+  // ====================
+
   const handleDelete = () => {
-    console.log("여행 삭제");
+    setIsDeleteConfirmOpen(true);
+  };
+
+  // ====================
+  // Delete Cancel
+  // ====================
+
+  const handleDeleteCancel = () => {
+    setIsDeleteConfirmOpen(false);
+  };
+
+  // ====================
+  // Delete Confirm
+  // ====================
+
+  const handleDeleteConfirm = () => {
+    if (!trip) {
+      return;
+    }
+
+    deleteTripWithRelatedData(trip.id);
+
+    setIsDeleteConfirmOpen(false);
+
+    navigate("/home", {
+      replace: true,
+    });
   };
 
   // ====================
@@ -383,7 +554,6 @@ export default function TripDetail() {
 
         <div
           className={`
-            pointer-events-none
             absolute
             top-0
             left-0
@@ -405,6 +575,8 @@ export default function TripDetail() {
             trip={trip}
             userName={currentUser?.name || ""}
             titleRef={titleRef}
+            onTitleSave={handleTripTitleSave}
+            onDateEdit={handleTripDateEditOpen}
           />
         </div>
 
@@ -453,15 +625,10 @@ export default function TripDetail() {
               transitionDuration: `${SLIDE_TIME}ms`,
             }}
           >
-            {/* ====================
-                Prepare
-            ==================== */}
+            {/* Prepare */}
 
             <div
-              className="
-                h-full
-                shrink-0
-              "
+              className="h-full shrink-0"
               style={{
                 width: "33.333333%",
               }}
@@ -470,18 +637,14 @@ export default function TripDetail() {
                 trip={trip}
                 containerRef={prepareScrollRef}
                 onScroll={handlePrepareScroll}
+                onScheduleAdded={handleScheduleAdded}
               />
             </div>
 
-            {/* ====================
-                Schedule
-            ==================== */}
+            {/* Schedule */}
 
             <div
-              className="
-                h-full
-                shrink-0
-              "
+              className="h-full shrink-0"
               style={{
                 width: "33.333333%",
               }}
@@ -490,33 +653,65 @@ export default function TripDetail() {
                 trip={trip}
                 containerRef={scheduleScrollRef}
                 initialDate={returnScheduleDate}
+                scheduleVersion={scheduleVersion}
               />
             </div>
 
-            {/* ====================
-                Expense
-            ==================== */}
+            {/* Expense */}
 
             <div
-              className="
-                h-full
-                shrink-0
-              "
+              className="h-full shrink-0"
               style={{
                 width: "33.333333%",
               }}
             >
-              <TripExpense containerRef={expenseScrollRef} />
+              <TripExpense trip={trip} containerRef={expenseScrollRef} />
             </div>
           </div>
         </div>
 
-        {/* ====================
-            Bottom Navigation
-        ==================== */}
-
         <BottomNav />
       </div>
+
+      {/* ====================
+          Date Edit Modal
+      ==================== */}
+
+      <TripDateEditModal
+        isOpen={isDateEditOpen}
+        trip={trip}
+        onClose={handleTripDateEditClose}
+        onSave={handleTripDateSelected}
+      />
+
+      {/* ====================
+          Date Change Confirm
+      ==================== */}
+
+      <ConfirmModal
+        isOpen={isDateConfirmOpen}
+        title="여행 일정을 변경할까요?"
+        message="변경된 여행 기간을 벗어나는 일정과 관련 데이터는 삭제돼요."
+        confirmText="변경"
+        cancelText="취소"
+        onConfirm={handleTripDateSave}
+        onCancel={handleTripDateConfirmCancel}
+      />
+
+      {/* ====================
+          Trip Delete Confirm
+      ==================== */}
+
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        title="여행 계획을 삭제할까요?"
+        message="삭제한 여행 계획과 관련된 일정 및 지출 정보는 다시 복구할 수 없어요."
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        danger
+      />
     </main>
   );
 }

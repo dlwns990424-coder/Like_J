@@ -66,7 +66,7 @@ export default function ScheduleDateTabs({ dates, selectedDate, onSelect }) {
                   }
                 `}
             >
-              {getWeekday(date)} {getShortDate(date)}
+              {getShortDate(date)} {getWeekday(date)}
             </button>
           );
         })}
@@ -79,13 +79,13 @@ export default function ScheduleDateTabs({ dates, selectedDate, onSelect }) {
       {selectedDateObject && (
         <h2
           className="
-            mt-[18px]
+            mt-[12px]
             text-[18px]
             font-semibold
             leading-[26px]
           "
         >
-          {getWeekday(selectedDateObject)} {getShortDate(selectedDateObject)}
+          {getShortDate(selectedDateObject)} {getWeekday(selectedDateObject)}
         </h2>
       )}
     </>

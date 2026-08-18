@@ -4,6 +4,8 @@ import { MapPin, Plus } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
 
+import ConfirmModal from "../../common/ConfirmModal";
+
 import ScheduleDateTabs from "./ScheduleDateTabs";
 import ScheduleAccommodation from "./ScheduleAccommodation";
 import ScheduleMemo from "./ScheduleMemo";
@@ -89,7 +91,12 @@ const getTimeValue = (schedule) => {
   return hour * 60 + minute;
 };
 
-export default function TripSchedule({ trip, containerRef, initialDate }) {
+export default function TripSchedule({
+  trip,
+  containerRef,
+  initialDate,
+  scheduleVersion,
+}) {
   const navigate = useNavigate();
 
   // ====================
@@ -167,6 +174,12 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
   const [selectedScheduleIds, setSelectedScheduleIds] = useState([]);
 
   // ====================
+  // Delete Confirm
+  // ====================
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // ====================
   // Favorite Places
   // ====================
 
@@ -216,7 +229,7 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
 
   useEffect(() => {
     refreshSchedules();
-  }, [trip.id]);
+  }, [trip.id, scheduleVersion]);
 
   useEffect(() => {
     refreshAccommodations();
@@ -452,15 +465,10 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
   // ====================
 
   const handleAccommodationDelete = (accommodationId) => {
-    const confirmed = window.confirm("이 숙소를 삭제할까요?");
-
-    if (!confirmed) {
-      return;
-    }
-
-    deleteAccommodation(accommodationId);
-
-    refreshAccommodations();
+    setDeleteTarget({
+      type: "accommodation",
+      id: accommodationId,
+    });
   };
 
   // ====================
@@ -555,21 +563,9 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
       return;
     }
 
-    const confirmed = window.confirm(
-      `선택한 일정 ${selectedScheduleIds.length}개를 삭제할까요?`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    selectedScheduleIds.forEach((scheduleId) => {
-      deleteSchedule(scheduleId);
+    setDeleteTarget({
+      type: "selectedSchedules",
     });
-
-    setSelectedScheduleIds([]);
-
-    refreshSchedules();
   };
 
   // ====================
@@ -581,22 +577,92 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
       return;
     }
 
-    const confirmed = window.confirm("현재 날짜의 일정을 모두 삭제할까요?");
+    setDeleteTarget({
+      type: "allSchedules",
+    });
+  };
 
-    if (!confirmed) {
+  // ====================
+  // Delete Confirm
+  // ====================
+
+  const handleDeleteConfirm = () => {
+    if (!deleteTarget) {
       return;
     }
 
-    selectedSchedules.forEach((schedule) => {
-      deleteSchedule(schedule.id);
-    });
+    if (deleteTarget.type === "accommodation") {
+      deleteAccommodation(deleteTarget.id);
 
-    setSelectedScheduleIds([]);
+      setDeleteTarget(null);
 
-    setIsEditMode(false);
+      refreshAccommodations();
 
-    refreshSchedules();
+      return;
+    }
+
+    if (deleteTarget.type === "selectedSchedules") {
+      selectedScheduleIds.forEach((scheduleId) => {
+        deleteSchedule(scheduleId);
+      });
+
+      setSelectedScheduleIds([]);
+
+      setDeleteTarget(null);
+
+      refreshSchedules();
+
+      return;
+    }
+
+    if (deleteTarget.type === "allSchedules") {
+      selectedSchedules.forEach((schedule) => {
+        deleteSchedule(schedule.id);
+      });
+
+      setSelectedScheduleIds([]);
+
+      setIsEditMode(false);
+
+      setDeleteTarget(null);
+
+      refreshSchedules();
+    }
   };
+
+  // ====================
+  // Delete Modal Text
+  // ====================
+
+  const getDeleteModalContent = () => {
+    if (deleteTarget?.type === "accommodation") {
+      return {
+        title: "숙소를 삭제할까요?",
+        message: "등록된 숙소가 일정에서 삭제됩니다.",
+      };
+    }
+
+    if (deleteTarget?.type === "selectedSchedules") {
+      return {
+        title: "일정을 삭제할까요?",
+        message: `선택한 일정 ${selectedScheduleIds.length}개가 삭제됩니다.`,
+      };
+    }
+
+    if (deleteTarget?.type === "allSchedules") {
+      return {
+        title: "일정을 모두 삭제할까요?",
+        message: "현재 날짜에 등록된 모든 일정이 삭제됩니다.",
+      };
+    }
+
+    return {
+      title: "삭제할까요?",
+      message: "",
+    };
+  };
+
+  const deleteModalContent = getDeleteModalContent();
 
   return (
     <div
@@ -787,6 +853,21 @@ export default function TripSchedule({ trip, containerRef, initialDate }) {
         onClose={handleMemoClose}
         onSave={handleMemoSave}
         onDelete={handleMemoDelete}
+      />
+
+      {/* ====================
+          Delete Confirm Modal
+      ==================== */}
+
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        title={deleteModalContent.title}
+        message={deleteModalContent.message}
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+        danger
       />
     </div>
   );

@@ -9,52 +9,17 @@ export default function SignUp() {
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
-
   const [email, setEmail] = useState("");
-
   const [password, setPassword] = useState("");
-
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
 
   // ====================
-  // Nickname Length
+  // Nickname
   // ====================
 
-  const getNicknameLength = (value) => {
-    return [...value].reduce((length, char) => {
-      if (/[가-힣]/.test(char)) {
-        return length + 2;
-      }
-
-      return length + 1;
-    }, 0);
-  };
-
-  // ====================
-  // Nickname Change
-  // ====================
-
-  const handleNameChange = (e) => {
-    const value = e.target.value;
-
-    // 한글, 영문, 숫자만 허용
-    const nicknameRegex = /^[가-힣A-Za-z0-9]*$/;
-
-    if (!nicknameRegex.test(value)) {
-      return;
-    }
-
-    // 한글 1자 = 2
-    // 영문/숫자 1자 = 1
-    // 최대 16
-    if (getNicknameLength(value) > 16) {
-      return;
-    }
-
-    setName(value);
-  };
+  const isNameTooLong = name.length > 12;
 
   // ====================
   // Submit
@@ -65,27 +30,31 @@ export default function SignUp() {
 
     const trimmedName = name.trim();
 
+    // ====================
+    // Nickname
+    // ====================
+
     if (!trimmedName) {
       alert("닉네임을 입력해주세요.");
       return;
     }
 
-    const nicknameRegex = /^[가-힣A-Za-z0-9]+$/;
-
-    if (!nicknameRegex.test(trimmedName)) {
-      alert("닉네임은 한글, 영문, 숫자만 사용할 수 있습니다.");
+    if (trimmedName.length > 12) {
       return;
     }
 
-    if (getNicknameLength(trimmedName) > 16) {
-      alert("닉네임은 한글 8자 또는 영문 16자 이내로 입력해주세요.");
-      return;
-    }
+    // ====================
+    // Email
+    // ====================
 
     if (!email.trim()) {
       alert("이메일을 입력해주세요.");
       return;
     }
+
+    // ====================
+    // Password
+    // ====================
 
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
@@ -99,6 +68,10 @@ export default function SignUp() {
       return;
     }
 
+    // ====================
+    // Existing User
+    // ====================
+
     const existingUser = findUserByEmail(email.trim());
 
     if (existingUser) {
@@ -106,13 +79,14 @@ export default function SignUp() {
       return;
     }
 
+    // ====================
+    // User
+    // ====================
+
     const user = {
       id: crypto.randomUUID(),
-
       name: trimmedName,
-
       email: email.trim(),
-
       password,
     };
 
@@ -135,12 +109,20 @@ export default function SignUp() {
     <>
       <main className="min-h-dvh bg-white px-5 pt-[calc(40px+env(safe-area-inset-top))] pb-[calc(40px+env(safe-area-inset-bottom))] text-[#191919]">
         <div className="mx-auto w-full max-w-[390px]">
+          {/* ====================
+              Logo
+          ==================== */}
+
           <Link
             to="/"
             className="click-scale block text-center text-[28px] font-bold leading-[36px] tracking-[-0.02em]"
           >
             LOGO
           </Link>
+
+          {/* ====================
+              Sign Up
+          ==================== */}
 
           <section className="mt-[80px]">
             <h1 className="text-[28px] font-bold leading-[36px] tracking-[-0.02em]">
@@ -168,13 +150,38 @@ export default function SignUp() {
                   type="text"
                   placeholder="닉네임을 입력해주세요."
                   value={name}
-                  onChange={handleNameChange}
-                  className="h-[52px] w-full rounded-xl border border-transparent bg-[#F5F5F5] px-[10px] text-[16px] leading-[24px] tracking-[-0.01em] outline-none placeholder:text-[#888888] focus:border-[#888888]"
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="off"
+                  className={`
+                    h-[52px]
+                    w-full
+                    rounded-xl
+                    border
+                    bg-[#F5F5F5]
+                    px-[10px]
+                    text-[16px]
+                    leading-[24px]
+                    tracking-[-0.01em]
+                    outline-none
+                    placeholder:text-[#888888]
+
+                    ${
+                      isNameTooLong
+                        ? "border-[#E5484D]"
+                        : "border-transparent focus:border-[#888888]"
+                    }
+                  `}
                 />
 
-                <p className="mt-[6px] text-[12px] leading-[18px] text-[#888888]">
-                  한글 8자 / 영문 16자 이내, 특수문자 사용 불가
-                </p>
+                {isNameTooLong ? (
+                  <p className="mt-[6px] text-[12px] leading-[18px] text-[#E5484D]">
+                    12글자까지 작성해주세요.
+                  </p>
+                ) : (
+                  <p className="mt-[6px] text-[12px] leading-[18px] text-[#888888]">
+                    최대 12글자까지 입력할 수 있습니다.
+                  </p>
+                )}
               </div>
 
               {/* ====================
@@ -255,6 +262,10 @@ export default function SignUp() {
               </button>
             </form>
 
+            {/* ====================
+                Login
+            ==================== */}
+
             <div className="mt-[20px] flex items-center justify-center gap-[10px] text-[14px] leading-[20px]">
               <span className="text-[#555555]">이미 계정이 있으신가요?</span>
 
@@ -265,6 +276,10 @@ export default function SignUp() {
           </section>
         </div>
       </main>
+
+      {/* ====================
+          Complete Modal
+      ==================== */}
 
       <ConfirmModal
         isOpen={isCompleteModalOpen}
