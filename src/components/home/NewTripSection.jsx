@@ -21,7 +21,7 @@ export default function NewTripSection() {
       ==================== */}
 
       <img
-        src={`/${import.meta.env.BASE_URL}img/TripCreate_bg.jpg`}
+        src={`${import.meta.env.BASE_URL}img/TripCreate_bg.jpg`}
         alt="TripCreate Background"
         className="
           absolute
