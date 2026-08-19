@@ -21,7 +21,7 @@ export default function Landing() {
           </h2>
 
           <p className="mt-[16px] text-[16px] font-normal leading-[24px] tracking-[-0.01em] text-[#555555]">
-            일정부터 이동 동선, 지출과 기록까지
+            일정부터 지출과 기록까지
             <br />
             한곳에서 관리해보세요.
           </p>
