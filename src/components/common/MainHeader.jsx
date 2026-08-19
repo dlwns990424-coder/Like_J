@@ -7,7 +7,11 @@ export default function MainHeader() {
     <Header
       left={
         <Link to="/home">
-          <img className="w-[100px]" src="../../img/logo/logo.png" alt="Logo" />
+          <img
+            className="w-[100px]"
+            src={`${import.meta.env.BASE_URL}img/logo/logo.png`}
+            alt="Logo"
+          />
         </Link>
       }
       right={

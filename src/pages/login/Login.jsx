@@ -47,7 +47,7 @@ export default function Login() {
         >
           <img
             className="w-[180px] m-auto my-0"
-            src="../../img/logo/logo.png"
+            src={`${import.meta.env.BASE_URL}img/logo/logo.png`}
             alt="Logo"
           />
         </Link>

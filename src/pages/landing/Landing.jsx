@@ -5,12 +5,12 @@ export default function Landing() {
     <main className="min-h-dvh bg-white px-5 pt-[calc(40px+env(safe-area-inset-top))] pb-[calc(40px+env(safe-area-inset-bottom))] text-[#191919]">
       <div className="mx-auto flex min-h-[calc(100dvh-80px)] w-full max-w-[390px] flex-col">
         <img
-          src="../../img/logo/logo.png"
+          src={`${import.meta.env.BASE_URL}img/logo/logo.png`}
           alt="TripJ_logo"
           className="w-[180px] object-contain m-auto my-0"
         />
         <img
-          src="../../img/landing/main.jpg"
+          src={`${import.meta.env.BASE_URL}img/landing/main.jpg`}
           alt="TripJ_Img"
           className="mt-[48px] h-[320px] w-full rounded-xl bg-[#D9D9D9]"
         />

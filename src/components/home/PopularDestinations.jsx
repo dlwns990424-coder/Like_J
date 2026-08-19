@@ -10,7 +10,7 @@ const popularDestinations = [
     countryCode: "JP",
     lat: 26.2124,
     lng: 127.6809,
-    imageUrl: "/img/popular/okinawa.jpg",
+    imageUrl: `${import.meta.env.BASE_URL}img/popular/okinawa.jpg`,
   },
   {
     id: "tokyo",
@@ -21,7 +21,7 @@ const popularDestinations = [
     countryCode: "JP",
     lat: 35.6762,
     lng: 139.6503,
-    imageUrl: "/img/popular/tokyo.jpg",
+    imageUrl: `${import.meta.env.BASE_URL}img/popular/tokyo.jpg`,
   },
   {
     id: "osaka",
@@ -32,7 +32,7 @@ const popularDestinations = [
     countryCode: "JP",
     lat: 34.6937,
     lng: 135.5023,
-    imageUrl: "/img/popular/osaka.jpg",
+    imageUrl: `${import.meta.env.BASE_URL}img/popular/osaka.jpg`,
   },
   {
     id: "rome",
@@ -43,7 +43,7 @@ const popularDestinations = [
     countryCode: "IT",
     lat: 41.9028,
     lng: 12.4964,
-    imageUrl: "/img/popular/rome.jpg",
+    imageUrl: `${import.meta.env.BASE_URL}img/popular/rome.jpg`,
   },
   {
     id: "london",
@@ -54,7 +54,7 @@ const popularDestinations = [
     countryCode: "GB",
     lat: 51.5072,
     lng: -0.1276,
-    imageUrl: "/img/popular/london.jpg",
+    imageUrl: `${import.meta.env.BASE_URL}img/popular/london.jpg`,
   },
   {
     id: "new-york",
@@ -65,7 +65,7 @@ const popularDestinations = [
     countryCode: "US",
     lat: 40.7128,
     lng: -74.006,
-    imageUrl: "/img/popular/new-york.jpg",
+    imageUrl: `${import.meta.env.BASE_URL}img/popular/new-york.jpg`,
   },
   {
     id: "busan",
@@ -76,7 +76,7 @@ const popularDestinations = [
     countryCode: "KR",
     lat: 35.1796,
     lng: 129.0756,
-    imageUrl: "/img/popular/busan.jpg",
+    imageUrl: `${import.meta.env.BASE_URL}img/popular/busan.jpg`,
   },
   {
     id: "seoul",
@@ -87,7 +87,7 @@ const popularDestinations = [
     countryCode: "KR",
     lat: 37.5665,
     lng: 126.978,
-    imageUrl: "/img/popular/seoul.jpg",
+    imageUrl: `${import.meta.env.BASE_URL}img/popular/seoul.jpg`,
   },
   {
     id: "taiwan",
@@ -98,7 +98,7 @@ const popularDestinations = [
     countryCode: "TW",
     lat: 23.6978,
     lng: 120.9605,
-    imageUrl: "/img/popular/taiwan.jpg",
+    imageUrl: `${import.meta.env.BASE_URL}img/popular/taiwan.jpg`,
   },
   {
     id: "hawaii",
@@ -109,7 +109,7 @@ const popularDestinations = [
     countryCode: "US",
     lat: 21.3069,
     lng: -157.8583,
-    imageUrl: "/img/popular/hawaii.jpg",
+    imageUrl: `${import.meta.env.BASE_URL}img/popular/hawaii.jpg`,
   },
 ];
 
