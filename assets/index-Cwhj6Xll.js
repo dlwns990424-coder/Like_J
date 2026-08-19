@@ -219,7 +219,7 @@ Please change the parent <Route path="${e}"> to <Route path="${e===`/`?`*`:`${e}
         overflow-hidden\r
         px-5\r
         pb-[30px]\r
-      `,children:[(0,V.jsx)(`img`,{src:`//TripJ/img/TripCreate_bg.jpg`,alt:`TripCreate Background`,className:`\r
+      `,children:[(0,V.jsx)(`img`,{src:`/TripJ/img/TripCreate_bg.jpg`,alt:`TripCreate Background`,className:`\r
           absolute\r
           inset-0\r
           h-full\r
