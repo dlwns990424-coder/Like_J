@@ -530,16 +530,6 @@ function FavoritePlaceCard({
             </span>
           )}
         </div>
-
-        <div className="h-[64px] w-[64px] shrink-0 overflow-hidden rounded-lg bg-[#D9D9D9]">
-          {place.imageUrl && (
-            <img
-              src={place.imageUrl}
-              alt={place.name}
-              className="h-full w-full object-cover"
-            />
-          )}
-        </div>
       </div>
 
       {/* ====================

@@ -1,9 +1,5 @@
-import { Search } from "lucide-react";
-
-import { Link } from "react-router-dom";
-
-import Header from "../../components/common/Header";
 import BottomNav from "../../components/common/BottomNav";
+import MainHeader from "../../components/common/MainHeader";
 
 import MyTrips from "../../components/home/MyTrips";
 import NewTripSection from "../../components/home/NewTripSection";
@@ -44,44 +40,7 @@ export default function Home() {
             Header
         ==================== */}
 
-        <Header
-          left={
-            <Link
-              to="/home"
-              className="
-                text-[28px]
-                font-bold
-                leading-[36px]
-                tracking-[-0.02em]
-              "
-            >
-              LOGO
-            </Link>
-          }
-          right={
-            <Link
-              to="/map"
-              className="
-                click-scale-sm
-                flex
-                flex-col
-                items-center
-                text-[#555555]
-              "
-            >
-              <Search size={22} strokeWidth={1.5} />
-
-              <span
-                className="
-                  text-[12px]
-                  leading-[18px]
-                "
-              >
-                도시검색
-              </span>
-            </Link>
-          }
-        />
+        <MainHeader />
 
         {/* ====================
             Content

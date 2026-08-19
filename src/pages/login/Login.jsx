@@ -45,7 +45,11 @@ export default function Login() {
           to="/"
           className="click-scale text-center text-[28px] font-bold leading-[36px] tracking-[-0.02em]"
         >
-          LOGO
+          <img
+            className="w-[180px] m-auto my-0"
+            src="../../img/logo/logo.png"
+            alt="Logo"
+          />
         </Link>
 
         <section className="mt-[80px]">

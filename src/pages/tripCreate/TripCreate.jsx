@@ -332,6 +332,8 @@ export default function TripCreate() {
 
           country: selectedDestination.country,
         });
+        console.log("선택한 여행지:", selectedDestination);
+        console.log("Google 이미지 결과:", googleImage);
       } catch (error) {
         console.error("대표 이미지 조회 오류:", error);
       }
